@@ -12,6 +12,7 @@ interface RulesTableProps {
   onEdit: (rule: FirewallRule) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string, enabled: boolean) => void;
+  readOnly?: boolean;
 }
 
 const actionColors: Record<string, string> = {
@@ -20,7 +21,7 @@ const actionColors: Record<string, string> = {
   REJECT: "bg-warning/20 text-warning border-warning/30",
 };
 
-export function RulesTable({ rules, onEdit, onDelete, onToggle }: RulesTableProps) {
+export function RulesTable({ rules, onEdit, onDelete, onToggle, readOnly }: RulesTableProps) {
   if (rules.length === 0) {
     return (
       <div className="text-center py-16 text-muted-foreground font-mono">
@@ -44,7 +45,7 @@ export function RulesTable({ rules, onEdit, onDelete, onToggle }: RulesTableProp
             <TableHead className="font-mono text-xs text-muted-foreground">IP DEST.</TableHead>
             <TableHead className="font-mono text-xs text-muted-foreground">PORT</TableHead>
             <TableHead className="font-mono text-xs text-muted-foreground">ACȚIUNE</TableHead>
-            <TableHead className="font-mono text-xs text-muted-foreground text-right">OPȚIUNI</TableHead>
+            {!readOnly && <TableHead className="font-mono text-xs text-muted-foreground text-right">OPȚIUNI</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -58,6 +59,7 @@ export function RulesTable({ rules, onEdit, onDelete, onToggle }: RulesTableProp
                   checked={rule.enabled}
                   onCheckedChange={(v) => onToggle(rule.id, v)}
                   className="scale-75"
+                  disabled={readOnly}
                 />
               </TableCell>
               <TableCell className="font-mono text-sm text-muted-foreground">{rule.priority}</TableCell>
@@ -78,16 +80,18 @@ export function RulesTable({ rules, onEdit, onDelete, onToggle }: RulesTableProp
                   {rule.action}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right">
-                <div className="flex gap-1 justify-end">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(rule)} className="h-7 w-7">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(rule.id)} className="h-7 w-7 text-destructive hover:text-destructive">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </TableCell>
+              {!readOnly && (
+                <TableCell className="text-right">
+                  <div className="flex gap-1 justify-end">
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(rule)} className="h-7 w-7">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(rule.id)} className="h-7 w-7 text-destructive hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
