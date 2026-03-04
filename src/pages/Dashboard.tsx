@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useAdmin";
 import { useFirewallRules } from "@/hooks/useFirewallRules";
 import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Plus, LogOut, RefreshCw } from "lucide-react";
+import { Shield, Plus, LogOut, RefreshCw, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -12,6 +14,8 @@ type FirewallRule = Tables<"firewall_rules">;
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
   const { data: rules, isLoading, refetch, addRule, updateRule, deleteRule, toggleRule } = useFirewallRules();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
@@ -77,6 +81,12 @@ const Dashboard = () => {
             <span className="text-xs font-mono text-muted-foreground hidden sm:block">
               {user?.email}
             </span>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="font-mono text-xs">
+                <Settings className="h-3.5 w-3.5 mr-1" />
+                ADMIN
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={() => signOut()} className="h-8 w-8">
               <LogOut className="h-4 w-4" />
             </Button>
