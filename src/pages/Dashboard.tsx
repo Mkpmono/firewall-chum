@@ -5,8 +5,9 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import { useFirewallRules } from "@/hooks/useFirewallRules";
 import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
+import { PresetRulesDialog } from "@/components/PresetRulesDialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Plus, LogOut, RefreshCw, Settings } from "lucide-react";
+import { Shield, Plus, LogOut, RefreshCw, Settings, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -18,8 +19,29 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { data: rules, isLoading, refetch, addRule, updateRule, deleteRule, toggleRule } = useFirewallRules();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
+  const [presetLoading, setPresetLoading] = useState(false);
   const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
   const { toast } = useToast();
+
+  const handleApplyPreset = async (rules: any[], selectedIp: string) => {
+    setPresetLoading(true);
+    try {
+      for (const rule of rules) {
+        await addRule.mutateAsync({
+          ...rule,
+          source_ip: "0.0.0.0/0",
+          destination_ip: selectedIp,
+        });
+      }
+      toast({ title: `${rules.length} reguli adăugate cu succes!` });
+      setPresetOpen(false);
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    } finally {
+      setPresetLoading(false);
+    }
+  };
 
   const handleAdd = () => {
     setEditingRule(null);
@@ -120,6 +142,10 @@ const Dashboard = () => {
               <RefreshCw className="h-3.5 w-3.5 mr-1" />
               REFRESH
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setPresetOpen(true)} className="font-mono">
+              <Zap className="h-3.5 w-3.5 mr-1" />
+              PRESET-URI
+            </Button>
             <Button size="sm" onClick={handleAdd} className="font-mono">
               <Plus className="h-3.5 w-3.5 mr-1" />
               REGULĂ NOUĂ
@@ -151,6 +177,13 @@ const Dashboard = () => {
         onSubmit={handleSubmit}
         editRule={editingRule}
         loading={addRule.isPending || updateRule.isPending}
+      />
+
+      <PresetRulesDialog
+        open={presetOpen}
+        onClose={() => setPresetOpen(false)}
+        onApply={handleApplyPreset}
+        loading={presetLoading}
       />
     </div>
   );
