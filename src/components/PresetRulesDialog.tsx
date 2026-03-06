@@ -34,7 +34,6 @@ interface Preset {
   name: string;
   description: string;
   icon: React.ReactNode;
-  color: string;
   rules: PresetRule[];
 }
 
@@ -44,7 +43,6 @@ const PRESETS: Preset[] = [
     name: "cPanel / WHM",
     description: "Reguli pentru hosting cPanel (HTTP, HTTPS, WHM, cPanel, FTP, SSH, DNS, Mail)",
     icon: <Server className="h-5 w-5" />,
-    color: "text-orange-400",
     rules: [
       { label: "cPanel - HTTP", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "HTTP web traffic" },
       { label: "cPanel - HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "HTTPS web traffic" },
@@ -68,7 +66,6 @@ const PRESETS: Preset[] = [
     name: "SonicPanel",
     description: "Reguli pentru SonicPanel hosting (HTTP, HTTPS, Panel, SSH, FTP, DNS, Mail)",
     icon: <Monitor className="h-5 w-5" />,
-    color: "text-blue-400",
     rules: [
       { label: "SonicPanel - HTTP", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "HTTP web traffic" },
       { label: "SonicPanel - HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "HTTPS web traffic" },
@@ -87,7 +84,6 @@ const PRESETS: Preset[] = [
     name: "Panou Jocuri",
     description: "Reguli pentru servere de jocuri (Minecraft, CS2, FiveM, Rust, ARK, TeamSpeak)",
     icon: <Gamepad2 className="h-5 w-5" />,
-    color: "text-green-400",
     rules: [
       { label: "Game - SSH", port: 22, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "SSH access" },
       { label: "Game - Minecraft", port: 25565, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "Minecraft server" },
@@ -108,7 +104,6 @@ const PRESETS: Preset[] = [
     name: "Web Server",
     description: "Reguli de bază pentru un web server (HTTP, HTTPS, SSH)",
     icon: <Globe className="h-5 w-5" />,
-    color: "text-cyan-400",
     rules: [
       { label: "Web - HTTP", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "HTTP traffic" },
       { label: "Web - HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "HTTPS traffic" },
@@ -120,7 +115,6 @@ const PRESETS: Preset[] = [
     name: "Database Server",
     description: "Reguli pentru servere de baze de date (MySQL, PostgreSQL, Redis, MongoDB)",
     icon: <Database className="h-5 w-5" />,
-    color: "text-yellow-400",
     rules: [
       { label: "DB - SSH", port: 22, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "SSH access" },
       { label: "DB - MySQL", port: 3306, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "MySQL" },
@@ -134,7 +128,6 @@ const PRESETS: Preset[] = [
     name: "Mail Server",
     description: "Reguli pentru servere de email (SMTP, IMAP, POP3, Submission)",
     icon: <Mail className="h-5 w-5" />,
-    color: "text-purple-400",
     rules: [
       { label: "Mail - SSH", port: 22, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "SSH access" },
       { label: "Mail - SMTP", port: 25, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "SMTP" },
@@ -149,7 +142,6 @@ const PRESETS: Preset[] = [
     name: "Plesk",
     description: "Reguli pentru Plesk hosting panel",
     icon: <Layers className="h-5 w-5" />,
-    color: "text-red-400",
     rules: [
       { label: "Plesk - HTTP", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 10, notes: "HTTP" },
       { label: "Plesk - HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 11, notes: "HTTPS" },
@@ -189,36 +181,36 @@ export function PresetRulesDialog({ open, onClose, onApply, loading }: PresetRul
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="glass border-border/50 max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-mono text-foreground flex items-center gap-2">
+          <DialogTitle className="text-foreground font-semibold flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            REGULI PRESTABILITE
+            Reguli Prestabilite
           </DialogTitle>
         </DialogHeader>
 
         {!hasIps ? (
           <div className="py-8 text-center">
-            <p className="font-mono text-muted-foreground text-sm">Nu ai IP-uri alocate.</p>
-            <p className="font-mono text-muted-foreground text-xs mt-1">Contactează administratorul.</p>
+            <p className="text-muted-foreground text-sm">Nu ai IP-uri alocate.</p>
+            <p className="text-muted-foreground text-xs mt-1">Contactează administratorul.</p>
           </div>
         ) : !selectedPreset ? (
           <div className="space-y-3">
-            <p className="text-xs font-mono text-muted-foreground">Selectează un set de reguli prestabilite:</p>
+            <p className="text-xs text-muted-foreground">Selectează un set de reguli prestabilite:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {PRESETS.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setSelectedPreset(p.id)}
-                  className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/50 hover:bg-muted hover:border-primary/50 transition-all text-left group"
+                  className="flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/40 transition-all text-left group"
                 >
-                  <div className={`mt-0.5 ${p.color} group-hover:scale-110 transition-transform`}>
+                  <div className="mt-0.5 text-primary group-hover:scale-110 transition-transform">
                     {p.icon}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-mono font-semibold text-sm text-foreground">{p.name}</p>
+                    <p className="font-semibold text-sm text-foreground">{p.name}</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{p.description}</p>
-                    <Badge variant="secondary" className="mt-2 font-mono text-[10px]">
+                    <Badge variant="secondary" className="mt-2 text-[10px]">
                       {p.rules.length} reguli
                     </Badge>
                   </div>
@@ -230,27 +222,26 @@ export function PresetRulesDialog({ open, onClose, onApply, loading }: PresetRul
           <div className="space-y-4">
             <button
               onClick={() => setSelectedPreset(null)}
-              className="text-xs font-mono text-primary hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               ← Înapoi la lista de preset-uri
             </button>
 
             <div className="flex items-center gap-3">
-              <div className={preset?.color}>{preset?.icon}</div>
+              <div className="text-primary">{preset?.icon}</div>
               <div>
-                <p className="font-mono font-bold text-foreground">{preset?.name}</p>
+                <p className="font-bold text-foreground">{preset?.name}</p>
                 <p className="text-xs text-muted-foreground">{preset?.description}</p>
               </div>
             </div>
 
-            {/* IP Selection */}
             <div>
-              <Label className="text-xs font-mono text-muted-foreground">SELECTEAZĂ IP-UL</Label>
+              <Label className="text-xs text-muted-foreground">Selectează IP-ul</Label>
               <Select value={selectedIp} onValueChange={setSelectedIp}>
-                <SelectTrigger className="mt-1 bg-muted border-border font-mono text-sm">
+                <SelectTrigger className="mt-1.5 bg-muted/50 border-border/50 text-sm rounded-xl">
                   <SelectValue placeholder="Alege IP-ul pentru reguli" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-card border-border/50 rounded-xl">
                   {myIps?.map((ip) => (
                     <SelectItem key={ip.id} value={ip.ip_address}>
                       {ip.ip_address} {ip.label ? `(${ip.label})` : ""}
@@ -260,17 +251,16 @@ export function PresetRulesDialog({ open, onClose, onApply, loading }: PresetRul
               </Select>
             </div>
 
-            {/* Rules preview */}
             <div>
-              <p className="text-xs font-mono text-muted-foreground mb-2">REGULI CARE VOR FI ADĂUGATE ({preset?.rules.length}):</p>
-              <div className="max-h-48 overflow-y-auto space-y-1 border border-border rounded-lg p-2 bg-muted/30">
+              <p className="text-xs text-muted-foreground mb-2">Reguli care vor fi adăugate ({preset?.rules.length}):</p>
+              <div className="max-h-48 overflow-y-auto space-y-1 border border-border/30 rounded-xl p-2 bg-muted/20">
                 {preset?.rules.map((r, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs font-mono py-1 px-2 rounded bg-muted/50">
+                  <div key={i} className="flex items-center justify-between text-xs py-1.5 px-3 rounded-lg bg-muted/40">
                     <span className="text-foreground">{r.label}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">{r.protocol.toUpperCase()}</span>
-                      <span className="text-primary">{r.port || r.port_range}</span>
-                      <Badge variant={r.action === "ACCEPT" ? "default" : "destructive"} className="text-[10px] font-mono">
+                      <span className="text-primary font-mono">{r.port || r.port_range}</span>
+                      <Badge variant={r.action === "ACCEPT" ? "default" : "destructive"} className="text-[10px]">
                         {r.action}
                       </Badge>
                     </div>
@@ -280,11 +270,11 @@ export function PresetRulesDialog({ open, onClose, onApply, loading }: PresetRul
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" onClick={onClose} className="flex-1 font-mono">
-                ANULARE
+              <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl">
+                Anulare
               </Button>
-              <Button onClick={handleApply} className="flex-1 font-mono" disabled={loading || !selectedIp}>
-                {loading ? "SE APLICĂ..." : `APLICĂ ${preset?.rules.length} REGULI`}
+              <Button onClick={handleApply} className="flex-1 rounded-xl gradient-btn text-primary-foreground border-0 hover:opacity-90" disabled={loading || !selectedIp}>
+                {loading ? "Se aplică..." : `Aplică ${preset?.rules.length} Reguli`}
               </Button>
             </div>
           </div>
