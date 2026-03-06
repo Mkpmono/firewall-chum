@@ -91,25 +91,25 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+      <header className="border-b border-border/50 glass sticky top-0 z-40">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 text-primary" />
-            <span className="font-mono font-bold text-foreground text-sm">
-              FIREWALL<span className="text-primary">PANEL</span>
+            <span className="font-bold text-foreground text-lg">
+              Ho<span className="gradient-text">x</span>ta
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-muted-foreground hidden sm:block">
+            <span className="text-xs text-muted-foreground hidden sm:block">
               {user?.email}
             </span>
             {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="font-mono text-xs">
-                <Settings className="h-3.5 w-3.5 mr-1" />
-                ADMIN
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="rounded-xl text-xs">
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Admin
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => signOut()} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={() => signOut()} className="h-9 w-9 rounded-xl">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -117,46 +117,46 @@ const Dashboard = () => {
       </header>
 
       {/* Main */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs font-mono text-muted-foreground">TOTAL REGULI</p>
-            <p className="text-2xl font-mono font-bold text-foreground">{totalCount}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+          <div className="glass rounded-2xl p-5">
+            <p className="text-xs text-muted-foreground mb-1">Total Reguli</p>
+            <p className="text-3xl font-bold text-foreground">{totalCount}</p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-xs font-mono text-muted-foreground">ACTIVE</p>
-            <p className="text-2xl font-mono font-bold text-primary">{activeCount}</p>
+          <div className="glass rounded-2xl p-5">
+            <p className="text-xs text-muted-foreground mb-1">Active</p>
+            <p className="text-3xl font-bold gradient-text">{activeCount}</p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4 hidden sm:block">
-            <p className="text-xs font-mono text-muted-foreground">INACTIVE</p>
-            <p className="text-2xl font-mono font-bold text-muted-foreground">{totalCount - activeCount}</p>
+          <div className="glass rounded-2xl p-5 hidden sm:block">
+            <p className="text-xs text-muted-foreground mb-1">Inactive</p>
+            <p className="text-3xl font-bold text-muted-foreground">{totalCount - activeCount}</p>
           </div>
         </div>
 
         {/* Actions bar */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-mono font-semibold text-foreground">Reguli Firewall</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-foreground">Reguli Firewall</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="font-mono">
-              <RefreshCw className="h-3.5 w-3.5 mr-1" />
-              REFRESH
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="rounded-xl">
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPresetOpen(true)} className="font-mono">
-              <Zap className="h-3.5 w-3.5 mr-1" />
-              PRESET-URI
+            <Button variant="outline" size="sm" onClick={() => setPresetOpen(true)} className="rounded-xl">
+              <Zap className="h-3.5 w-3.5 mr-1.5" />
+              Preset-uri
             </Button>
-            <Button size="sm" onClick={handleAdd} className="font-mono">
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              REGULĂ NOUĂ
+            <Button size="sm" onClick={handleAdd} className="rounded-xl gradient-btn text-primary-foreground border-0 hover:opacity-90">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Regulă Nouă
             </Button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="glass rounded-2xl overflow-hidden">
           {isLoading ? (
-            <div className="text-center py-16 text-muted-foreground font-mono animate-pulse-glow">
+            <div className="text-center py-16 text-muted-foreground animate-pulse-glow">
               Se încarcă...
             </div>
           ) : (
@@ -170,7 +170,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Dialog */}
       <RuleFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

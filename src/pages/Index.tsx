@@ -8,7 +8,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="font-mono text-primary animate-pulse-glow">LOADING...</div>
+        <div className="text-primary animate-pulse-glow font-semibold">Se încarcă...</div>
       </div>
     );
   }
