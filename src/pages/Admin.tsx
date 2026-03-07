@@ -1,15 +1,25 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser } from "@/hooks/useAdmin";
+import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser, useAdminProfiles } from "@/hooks/useAdmin";
 import { RulesTable } from "@/components/RulesTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft } from "lucide-react";
+import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -21,7 +31,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border/50 glass sticky top-0 z-40">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -84,13 +93,7 @@ const Admin = () => {
               </div>
             ) : (
               <>
-                <div className="glass rounded-2xl p-5">
-                  <h3 className="font-semibold text-foreground mb-1">
-                    {selectedProfile?.display_name || "—"}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{selectedProfile?.email}</p>
-                </div>
-
+                <ClientProfileSection userId={selectedUserId} profile={selectedProfile} />
                 <ClientIpsSection userId={selectedUserId} />
                 <ClientRulesSection userId={selectedUserId} />
               </>
@@ -101,6 +104,115 @@ const Admin = () => {
     </div>
   );
 };
+
+function ClientProfileSection({ userId, profile }: { userId: string; profile: any }) {
+  const { updateProfile, deleteProfile } = useAdminProfiles();
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const { toast } = useToast();
+
+  const startEdit = () => {
+    setDisplayName(profile?.display_name || "");
+    setEmail(profile?.email || "");
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        user_id: userId,
+        display_name: displayName.trim() || null,
+        email: email.trim() || null,
+      });
+      toast({ title: "Profil actualizat!" });
+      setEditing(false);
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteProfile.mutateAsync(userId);
+      toast({ title: "Profil șters!" });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      {editing ? (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Nume</label>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Email</label>
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
+              <Save className="h-3.5 w-3.5 mr-1" />
+              Salvează
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="rounded-xl">
+              <X className="h-3.5 w-3.5 mr-1" />
+              Anulare
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-foreground">
+              {profile?.display_name || "—"}
+            </h3>
+            <p className="text-xs text-muted-foreground">{profile?.email}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              Editează
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="rounded-xl text-destructive hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Șterge
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass border-border/50 rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Profilul va fi șters permanent. Regulile și IP-urile asociate vor rămâne.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl">Anulare</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Șterge
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ClientIpsSection({ userId }: { userId: string }) {
   const { data: ips, isLoading } = useClientIps(userId);
