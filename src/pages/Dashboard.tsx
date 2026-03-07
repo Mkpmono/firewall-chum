@@ -7,11 +7,14 @@ import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
 import { PresetRulesDialog } from "@/components/PresetRulesDialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Plus, LogOut, RefreshCw, Settings, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type FirewallRule = Tables<"firewall_rules">;
+
+const MAX_RULES = 20;
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -24,17 +27,29 @@ const Dashboard = () => {
   const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
   const { toast } = useToast();
 
-  const handleApplyPreset = async (rules: any[], selectedIp: string) => {
+  const totalCount = rules?.length || 0;
+  const activeCount = rules?.filter((r) => r.enabled).length || 0;
+  const atLimit = totalCount >= MAX_RULES;
+
+  const handleApplyPreset = async (presetRules: any[], selectedIp: string) => {
+    if (totalCount + presetRules.length > MAX_RULES) {
+      toast({
+        title: "Limită depășită",
+        description: `Ai ${totalCount}/${MAX_RULES} reguli. Contactează administratorul pentru mai multe.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setPresetLoading(true);
     try {
-      for (const rule of rules) {
+      for (const rule of presetRules) {
         await addRule.mutateAsync({
           ...rule,
           source_ip: "0.0.0.0/0",
           destination_ip: selectedIp,
         });
       }
-      toast({ title: `${rules.length} reguli adăugate cu succes!` });
+      toast({ title: `${presetRules.length} reguli adăugate cu succes!` });
       setPresetOpen(false);
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -44,6 +59,14 @@ const Dashboard = () => {
   };
 
   const handleAdd = () => {
+    if (atLimit) {
+      toast({
+        title: "Limită atinsă",
+        description: `Ai deja ${MAX_RULES} reguli. Contactează administratorul pentru a crește limita.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingRule(null);
     setDialogOpen(true);
   };
@@ -59,6 +82,10 @@ const Dashboard = () => {
         await updateRule.mutateAsync({ id: editingRule.id, ...data });
         toast({ title: "Regulă actualizată!" });
       } else {
+        if (totalCount >= MAX_RULES) {
+          toast({ title: "Limită atinsă", description: "Contactează administratorul.", variant: "destructive" });
+          return;
+        }
         await addRule.mutateAsync(data);
         toast({ title: "Regulă adăugată!" });
       }
@@ -84,9 +111,6 @@ const Dashboard = () => {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
     }
   };
-
-  const activeCount = rules?.filter((r) => r.enabled).length || 0;
-  const totalCount = rules?.length || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,8 +142,19 @@ const Dashboard = () => {
 
       {/* Main */}
       <main className="container mx-auto px-4 py-8">
+        {/* Limit warning */}
+        {atLimit && (
+          <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-destructive">Limită de reguli atinsă ({MAX_RULES}/{MAX_RULES})</p>
+              <p className="text-xs text-destructive/80">Contactează administratorul pentru a crește limita.</p>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="glass rounded-2xl p-5">
             <p className="text-xs text-muted-foreground mb-1">Total Reguli</p>
             <p className="text-3xl font-bold text-foreground">{totalCount}</p>
@@ -128,9 +163,15 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground mb-1">Active</p>
             <p className="text-3xl font-bold gradient-text">{activeCount}</p>
           </div>
-          <div className="glass rounded-2xl p-5 hidden sm:block">
+          <div className="glass rounded-2xl p-5">
             <p className="text-xs text-muted-foreground mb-1">Inactive</p>
             <p className="text-3xl font-bold text-muted-foreground">{totalCount - activeCount}</p>
+          </div>
+          <div className="glass rounded-2xl p-5">
+            <p className="text-xs text-muted-foreground mb-1">Limită</p>
+            <p className={`text-3xl font-bold ${atLimit ? "text-destructive" : "text-foreground"}`}>
+              {totalCount}<span className="text-lg text-muted-foreground">/{MAX_RULES}</span>
+            </p>
           </div>
         </div>
 
@@ -142,11 +183,11 @@ const Dashboard = () => {
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPresetOpen(true)} className="rounded-xl">
+            <Button variant="outline" size="sm" onClick={() => setPresetOpen(true)} className="rounded-xl" disabled={atLimit}>
               <Zap className="h-3.5 w-3.5 mr-1.5" />
               Preset-uri
             </Button>
-            <Button size="sm" onClick={handleAdd} className="rounded-xl gradient-btn text-primary-foreground border-0 hover:opacity-90">
+            <Button size="sm" onClick={handleAdd} className="rounded-xl gradient-btn text-primary-foreground border-0 hover:opacity-90" disabled={atLimit}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Regulă Nouă
             </Button>
@@ -183,6 +224,8 @@ const Dashboard = () => {
         onClose={() => setPresetOpen(false)}
         onApply={handleApplyPreset}
         loading={presetLoading}
+        currentRuleCount={totalCount}
+        maxRules={MAX_RULES}
       />
     </div>
   );

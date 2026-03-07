@@ -34,6 +34,38 @@ export function useAllProfiles() {
   });
 }
 
+export function useAdminProfiles() {
+  const queryClient = useQueryClient();
+
+  const updateProfile = useMutation({
+    mutationFn: async ({ user_id, display_name, email }: { user_id: string; display_name: string | null; email: string | null }) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ display_name, email })
+        .eq("user_id", user_id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_profiles"] });
+    },
+  });
+
+  const deleteProfile = useMutation({
+    mutationFn: async (user_id: string) => {
+      const { error } = await supabase.from("profiles").delete().eq("user_id", user_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_profiles"] });
+    },
+  });
+
+  return { updateProfile, deleteProfile };
+}
+
 export function useClientIps(userId?: string) {
   return useQuery({
     queryKey: ["client_ips", userId],
