@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useAdmin";
+import { useIsAdmin, useMyProfile } from "@/hooks/useAdmin";
 import { useFirewallRules } from "@/hooks/useFirewallRules";
 import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
@@ -14,11 +14,10 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type FirewallRule = Tables<"firewall_rules">;
 
-const MAX_RULES = 20;
-
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { data: myProfile } = useMyProfile();
   const navigate = useNavigate();
   const { data: rules, isLoading, refetch, addRule, updateRule, deleteRule, toggleRule } = useFirewallRules();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -27,9 +26,10 @@ const Dashboard = () => {
   const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
   const { toast } = useToast();
 
+  const maxRules = (myProfile as any)?.max_rules ?? 20;
   const totalCount = rules?.length || 0;
   const activeCount = rules?.filter((r) => r.enabled).length || 0;
-  const atLimit = totalCount >= MAX_RULES;
+  const atLimit = totalCount >= maxRules;
 
   const handleApplyPreset = async (presetRules: any[], selectedIp: string) => {
     if (totalCount + presetRules.length > MAX_RULES) {
