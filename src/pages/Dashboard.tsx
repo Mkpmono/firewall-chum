@@ -170,7 +170,7 @@ const Dashboard = () => {
           <div className="glass rounded-2xl p-5">
             <p className="text-xs text-muted-foreground mb-1">Limită</p>
             <p className={`text-3xl font-bold ${atLimit ? "text-destructive" : "text-foreground"}`}>
-              {totalCount}<span className="text-lg text-muted-foreground">/{MAX_RULES}</span>
+              {totalCount}<span className="text-lg text-muted-foreground">/{maxRules}</span>
             </p>
           </div>
         </div>
