@@ -51,6 +51,9 @@ const App = () => (
           <Route path="/admin" element={
             <AdminRoute><Admin /></AdminRoute>
           } />
+          <Route path="/admin/self-host" element={
+            <AdminRoute><SelfHostSetup /></AdminRoute>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
