@@ -82,7 +82,7 @@ const Auth = () => {
               />
             </div>
             <Button type="submit" className="w-full h-11 rounded-xl gradient-btn text-primary-foreground font-semibold text-sm border-0 hover:opacity-90 transition-opacity" disabled={loading}>
-              {loading ? "Se încarcă..." : isLogin ? "Autentificare" : "Creare cont"}
+              {loading ? "Se încarcă..." : "Autentificare"}
               {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </form>
