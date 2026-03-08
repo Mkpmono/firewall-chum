@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMyIps } from "@/hooks/useAdmin";
+import { useMyIps, useMyProfile } from "@/hooks/useAdmin";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Server, Gamepad2, Monitor, Globe, Database, Mail, Shield, Layers, Cloud, Cpu, HardDrive, Radio } from "lucide-react";
+import { Server, Gamepad2, Monitor, Globe, Database, Mail, Shield, Layers, Cloud, Cpu, HardDrive, Radio, ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface PresetRule {
   label: string;
@@ -35,6 +35,7 @@ interface Preset {
   description: string;
   icon: React.ReactNode;
   category: string;
+  isPremium?: boolean;
   rules: PresetRule[];
 }
 
@@ -251,6 +252,52 @@ const PRESETS: Preset[] = [
       { label: "VoIP - FreePBX HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "ACCEPT", priority: 16, notes: "FreePBX HTTPS" },
     ],
   },
+  {
+    id: "ddos-standard",
+    name: "DDoS Standard",
+    description: "Protecție de bază: invalid packets, SYN/ICMP limit, bogon block",
+    icon: <ShieldAlert className="h-5 w-5" />,
+    category: "DDoS Protection",
+    rules: [
+      { label: "[DDoS-Std] Drop Invalid Packets", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 1, notes: "Drop invalid state packets" },
+      { label: "[DDoS-Std] Block XMAS Packets", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 2, notes: "TCP flags ALL ALL" },
+      { label: "[DDoS-Std] Block NULL Packets", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 3, notes: "TCP flags ALL NONE" },
+      { label: "[DDoS-Std] SYN Limit 5/s", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 4, notes: "SYN limit 5/s burst 10" },
+      { label: "[DDoS-Std] ICMP Limit 2/s", port: null, port_range: null, protocol: "icmp", direction: "INPUT", action: "DROP", priority: 5, notes: "ICMP echo-request limit 2/s burst 5" },
+      { label: "[DDoS-Std] Block Bogon Networks", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 6, notes: "Block 0.0.0.0/8 and 224.0.0.0/4" },
+    ],
+  },
+  {
+    id: "ddos-premium",
+    name: "DDoS Premium",
+    description: "Protecție completă: SYN/UDP/RST flood, amplification, slowloris, conn limits",
+    icon: <ShieldCheck className="h-5 w-5" />,
+    category: "DDoS Protection",
+    isPremium: true,
+    rules: [
+      { label: "[DDoS-Pro] Drop Invalid Packets", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 1, notes: "Drop invalid state" },
+      { label: "[DDoS-Pro] Block XMAS Packets", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 2, notes: "TCP flags ALL ALL" },
+      { label: "[DDoS-Pro] Block NULL Packets", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 3, notes: "TCP flags ALL NONE" },
+      { label: "[DDoS-Pro] Block Fragmented", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 4, notes: "Block fragmented packets" },
+      { label: "[DDoS-Pro] SYN Flood 1/s", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 5, notes: "SYN limit 1/s burst 3 (agresiv)" },
+      { label: "[DDoS-Pro] ICMP Flood 1/s", port: null, port_range: null, protocol: "icmp", direction: "INPUT", action: "DROP", priority: 6, notes: "ICMP limit 1/s burst 4" },
+      { label: "[DDoS-Pro] UDP Flood Protect", port: null, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 7, notes: "UDP limit 10/s burst 20" },
+      { label: "[DDoS-Pro] RST Flood Protect", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 8, notes: "RST limit 2/s burst 2" },
+      { label: "[DDoS-Pro] Conn Limit HTTP", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 9, notes: "Max 50 conn/IP port 80" },
+      { label: "[DDoS-Pro] Conn Limit HTTPS", port: 443, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 10, notes: "Max 50 conn/IP port 443" },
+      { label: "[DDoS-Pro] Slowloris Protect", port: 80, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 11, notes: "New conn limit 60/s on port 80" },
+      { label: "[DDoS-Pro] DNS Amplification", port: 53, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 12, notes: "Block DNS replies >512 bytes" },
+      { label: "[DDoS-Pro] NTP Amplification", port: 123, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 13, notes: "Block NTP replies >48 bytes" },
+      { label: "[DDoS-Pro] SSDP Block", port: 1900, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 14, notes: "Block SSDP" },
+      { label: "[DDoS-Pro] Chargen Block", port: 19, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 15, notes: "Block chargen" },
+      { label: "[DDoS-Pro] SNMP Amplification", port: 161, port_range: null, protocol: "udp", direction: "INPUT", action: "DROP", priority: 16, notes: "Block SNMP replies >200 bytes" },
+      { label: "[DDoS-Pro] New Conn Rate Limit", port: null, port_range: null, protocol: "tcp", direction: "INPUT", action: "DROP", priority: 17, notes: "New conn limit 60/s burst 20" },
+      { label: "[DDoS-Pro] Block Bogon 0/8", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 18, notes: "Block 0.0.0.0/8" },
+      { label: "[DDoS-Pro] Block Bogon 127/8", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 19, notes: "Block 127.0.0.0/8" },
+      { label: "[DDoS-Pro] Block Multicast", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 20, notes: "Block 224.0.0.0/4" },
+      { label: "[DDoS-Pro] Block Reserved", port: null, port_range: null, protocol: "all", direction: "INPUT", action: "DROP", priority: 21, notes: "Block 240.0.0.0/4" },
+    ],
+  },
 ];
 
 const CATEGORIES = [...new Set(PRESETS.map(p => p.category))];
@@ -266,9 +313,11 @@ interface PresetRulesDialogProps {
 
 export function PresetRulesDialog({ open, onClose, onApply, loading, currentRuleCount = 0, maxRules = 20 }: PresetRulesDialogProps) {
   const { data: myIps } = useMyIps();
+  const { data: myProfile } = useMyProfile();
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedIp, setSelectedIp] = useState<string>("");
 
+  const hasPremiumDdos = (myProfile as any)?.ddos_protection === true;
   const hasIps = myIps && myIps.length > 0;
   const preset = PRESETS.find((p) => p.id === selectedPreset);
   const remainingSlots = maxRules - currentRuleCount;
@@ -309,26 +358,38 @@ export function PresetRulesDialog({ open, onClose, onApply, loading, currentRule
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {PRESETS.filter(p => p.category === cat).map((p) => {
                     const tooMany = p.rules.length > remainingSlots;
+                    const lockedPremium = p.isPremium && !hasPremiumDdos;
+                    const disabled = tooMany || lockedPremium;
                     return (
                       <button
                         key={p.id}
-                        onClick={() => !tooMany && setSelectedPreset(p.id)}
-                        disabled={tooMany}
+                        onClick={() => !disabled && setSelectedPreset(p.id)}
+                        disabled={disabled}
                         className={`flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-muted/30 transition-all text-left group ${
-                          tooMany ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/60 hover:border-primary/40"
-                        }`}
+                          disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/60 hover:border-primary/40"
+                        } ${p.isPremium ? "border-primary/20" : ""}`}
                       >
-                        <div className="mt-0.5 text-primary group-hover:scale-110 transition-transform">
+                        <div className={`mt-0.5 ${p.isPremium ? "text-primary" : "text-primary"} group-hover:scale-110 transition-transform`}>
                           {p.icon}
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm text-foreground">{p.name}</p>
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{p.description}</p>
-                          <div className="flex gap-1.5 mt-2">
+                          <div className="flex gap-1.5 mt-2 flex-wrap">
                             <Badge variant="secondary" className="text-[10px]">
                               {p.rules.length} reguli
                             </Badge>
-                            {tooMany && (
+                            {p.isPremium && (
+                              <Badge className="text-[10px] bg-primary/15 text-primary border-primary/30">
+                                PREMIUM
+                              </Badge>
+                            )}
+                            {lockedPremium && (
+                              <Badge variant="destructive" className="text-[10px]">
+                                🔒 Necesită activare admin
+                              </Badge>
+                            )}
+                            {tooMany && !lockedPremium && (
                               <Badge variant="destructive" className="text-[10px]">
                                 Depășește limita
                               </Badge>
