@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMyIps } from "@/hooks/useAdmin";
+import { useMyIps, useMyProfile } from "@/hooks/useAdmin";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Server, Gamepad2, Monitor, Globe, Database, Mail, Shield, Layers, Cloud, Cpu, HardDrive, Radio } from "lucide-react";
+import { Server, Gamepad2, Monitor, Globe, Database, Mail, Shield, Layers, Cloud, Cpu, HardDrive, Radio, ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface PresetRule {
   label: string;
