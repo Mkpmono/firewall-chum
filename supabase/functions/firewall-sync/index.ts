@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
         lines.push("# ║  Per-IP rate limiting + sinkhole redirect + SYN cookies     ║");
         lines.push("# ╚══════════════════════════════════════════════════════════════╝");
         for (const ip of premiumIps) {
-          lines.push(...generatePremiumIptables(ip.ip_address));
+          lines.push(...generatePremiumIptables(ip.ip_address, sinkholeMap[ip.user_id]));
         }
       }
 
