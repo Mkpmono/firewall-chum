@@ -209,11 +209,12 @@ Deno.serve(async (req) => {
     interface IpEntry { user_id: string; ip_address: string }
     let premiumIps: IpEntry[] = [];
     let standardIps: IpEntry[] = [];
+    const sinkholeMap: Record<string, string> = {}; // user_id -> sinkhole_ip
 
     if (userId) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_id, ddos_protection")
+        .select("user_id, ddos_protection, sinkhole_ip")
         .eq("user_id", userId)
         .maybeSingle();
       const { data: ips } = await supabase
@@ -223,16 +224,19 @@ Deno.serve(async (req) => {
       const userIps = ips || [];
       if (profile?.ddos_protection) {
         premiumIps = userIps;
+        sinkholeMap[userId] = profile.sinkhole_ip || DEFAULT_SINKHOLE_IP;
       } else {
         standardIps = userIps;
       }
     } else {
-      // All users
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, ddos_protection");
+        .select("user_id, ddos_protection, sinkhole_ip");
       const premiumUserIds = (profiles || []).filter((p) => p.ddos_protection).map((p) => p.user_id);
       const standardUserIds = (profiles || []).filter((p) => !p.ddos_protection).map((p) => p.user_id);
+      for (const p of profiles || []) {
+        if (p.ddos_protection) sinkholeMap[p.user_id] = p.sinkhole_ip || DEFAULT_SINKHOLE_IP;
+      }
 
       const { data: allIps } = await supabase
         .from("client_ips")
