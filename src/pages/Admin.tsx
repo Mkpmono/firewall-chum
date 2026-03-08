@@ -5,7 +5,7 @@ import { RulesTable } from "@/components/RulesTable";
 import { AdminRuleFormDialog } from "@/components/AdminRuleFormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X } from "lucide-react";
+import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -175,11 +175,14 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="font-semibold text-foreground">{profile?.display_name || "—"}</h3>
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
-            <p className="text-xs text-muted-foreground mt-1">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-xs text-muted-foreground">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+              <DdosToggle userId={userId} profile={profile} />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
@@ -370,6 +373,42 @@ function ClientRulesSection({ userId }: { userId: string }) {
         userId={userId}
       />
     </div>
+  );
+}
+
+function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
+  const { updateProfile } = useAdminProfiles();
+  const { toast } = useToast();
+  const isActive = profile?.ddos_protection === true;
+
+  const handleToggle = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        user_id: userId,
+        ddos_protection: !isActive,
+      });
+      toast({
+        title: !isActive ? "🛡️ Protecție DDoS activată!" : "Protecție DDoS dezactivată",
+        description: !isActive ? "Regulile premium anti-DDoS au fost activate pentru acest client." : undefined,
+      });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={updateProfile.isPending}
+      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+        isActive
+          ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
+          : "bg-muted/50 text-muted-foreground border border-border/50 hover:bg-muted"
+      }`}
+    >
+      {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+      {isActive ? "DDoS Protection ON" : "DDoS Protection OFF"}
+    </button>
   );
 }
 
