@@ -376,4 +376,40 @@ function ClientRulesSection({ userId }: { userId: string }) {
   );
 }
 
+function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
+  const { updateProfile } = useAdminProfiles();
+  const { toast } = useToast();
+  const isActive = profile?.ddos_protection === true;
+
+  const handleToggle = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        user_id: userId,
+        ddos_protection: !isActive,
+      });
+      toast({
+        title: !isActive ? "🛡️ Protecție DDoS activată!" : "Protecție DDoS dezactivată",
+        description: !isActive ? "Regulile premium anti-DDoS au fost activate pentru acest client." : undefined,
+      });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={updateProfile.isPending}
+      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+        isActive
+          ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
+          : "bg-muted/50 text-muted-foreground border border-border/50 hover:bg-muted"
+      }`}
+    >
+      {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+      {isActive ? "DDoS Protection ON" : "DDoS Protection OFF"}
+    </button>
+  );
+}
+
 export default Admin;
