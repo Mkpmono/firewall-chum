@@ -114,11 +114,13 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
 
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
     setEmail(profile?.email || "");
+    setMaxRulesVal(profile?.max_rules ?? 20);
     setEditing(true);
   };
 
@@ -128,6 +130,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
         user_id: userId,
         display_name: displayName.trim() || null,
         email: email.trim() || null,
+        max_rules: maxRulesVal,
       });
       toast({ title: "Profil actualizat!" });
       setEditing(false);
