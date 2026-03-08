@@ -18,21 +18,8 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast({
-          title: "Cont creat!",
-          description: "Verifică email-ul pentru confirmare.",
-        });
-      }
     } catch (error: any) {
       toast({
         title: "Eroare",
