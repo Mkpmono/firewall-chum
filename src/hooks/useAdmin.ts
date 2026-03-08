@@ -145,3 +145,76 @@ export function useAllRulesForUser(userId?: string) {
     },
   });
 }
+
+export function useAdminRules() {
+  const queryClient = useQueryClient();
+
+  const addRule = useMutation({
+    mutationFn: async (rule: {
+      user_id: string;
+      label?: string | null;
+      source_ip?: string;
+      destination_ip?: string;
+      port?: number | null;
+      port_range?: string | null;
+      protocol?: string;
+      direction?: string;
+      action?: string;
+      priority?: number;
+      enabled?: boolean;
+      notes?: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from("firewall_rules")
+        .insert(rule)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin_rules", vars.user_id] });
+    },
+  });
+
+  const updateRule = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { data, error } = await supabase
+        .from("firewall_rules")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_rules"] });
+    },
+  });
+
+  const deleteRule = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("firewall_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_rules"] });
+    },
+  });
+
+  const toggleRule = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from("firewall_rules")
+        .update({ enabled })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_rules"] });
+    },
+  });
+
+  return { addRule, updateRule, deleteRule, toggleRule };
+}
