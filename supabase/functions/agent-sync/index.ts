@@ -127,6 +127,13 @@ Deno.serve(async (req) => {
       .eq("user_id", server.user_id)
       .eq("enabled", true);
 
+    // Get user's User-Agent blocking rules
+    const { data: uaRules } = await supabase
+      .from("useragent_rules")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("enabled", true);
+
     const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
     const hasPremiumDdos = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
