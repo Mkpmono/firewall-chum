@@ -315,12 +315,38 @@ interface PresetRulesDialogProps {
 export function PresetRulesDialog({ open, onClose, onApply, loading, currentRuleCount = 0, maxRules = 20 }: PresetRulesDialogProps) {
   const { data: myIps } = useMyIps();
   const { data: myProfile } = useMyProfile();
+  const { data: dbPresets } = useAllPresetTemplatesWithRules();
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedIp, setSelectedIp] = useState<string>("");
 
   const hasPremiumDdos = (myProfile as any)?.ddos_protection === true;
   const hasIps = myIps && myIps.length > 0;
-  const preset = PRESETS.find((p) => p.id === selectedPreset);
+
+  // Merge hardcoded + DB presets
+  const allPresets: Preset[] = useMemo(() => {
+    const dbConverted: Preset[] = (dbPresets || []).map((p) => ({
+      id: `db-${p.id}`,
+      name: p.name,
+      description: p.description || "",
+      icon: p.is_premium ? <ShieldCheck className="h-5 w-5" /> : <Shield className="h-5 w-5" />,
+      category: p.category,
+      isPremium: p.is_premium,
+      rules: p.rules.map((r) => ({
+        label: r.label,
+        port: r.port,
+        port_range: r.port_range,
+        protocol: r.protocol,
+        direction: r.direction,
+        action: r.action,
+        priority: r.priority,
+        notes: r.notes || "",
+      })),
+    }));
+    return [...PRESETS, ...dbConverted];
+  }, [dbPresets]);
+
+  const allCategories = [...new Set(allPresets.map(p => p.category))];
+  const preset = allPresets.find((p) => p.id === selectedPreset);
   const remainingSlots = maxRules - currentRuleCount;
   const wouldExceed = preset ? preset.rules.length > remainingSlots : false;
 
