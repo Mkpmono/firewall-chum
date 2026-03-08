@@ -35,6 +35,7 @@ interface Preset {
   description: string;
   icon: React.ReactNode;
   category: string;
+  isPremium?: boolean;
   rules: PresetRule[];
 }
 
