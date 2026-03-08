@@ -7,7 +7,7 @@ import { AdminPresetsManager } from "@/components/AdminPresetsManager";
 import { ClientServersSection } from "@/components/ClientServersSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff } from "lucide-react";
+import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,10 @@ const Admin = () => {
             <Badge className="gradient-btn text-primary-foreground border-0 text-xs">Admin</Badge>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin/self-host")} className="rounded-xl text-xs hidden sm:flex">
+              <HardDrive className="h-3.5 w-3.5 mr-1.5" />
+              Self-Host
+            </Button>
             <span className="text-xs text-muted-foreground hidden sm:block">{user?.email}</span>
             <Button variant="ghost" size="icon" onClick={() => signOut()} className="h-9 w-9 rounded-xl">
               <LogOut className="h-4 w-4" />

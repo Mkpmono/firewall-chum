@@ -8,6 +8,7 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import SelfHostSetup from "./pages/SelfHostSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,9 @@ const App = () => (
           } />
           <Route path="/admin" element={
             <AdminRoute><Admin /></AdminRoute>
+          } />
+          <Route path="/admin/self-host" element={
+            <AdminRoute><SelfHostSetup /></AdminRoute>
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>
