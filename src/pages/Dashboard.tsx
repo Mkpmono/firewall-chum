@@ -32,10 +32,10 @@ const Dashboard = () => {
   const atLimit = totalCount >= maxRules;
 
   const handleApplyPreset = async (presetRules: any[], selectedIp: string) => {
-    if (totalCount + presetRules.length > MAX_RULES) {
+    if (totalCount + presetRules.length > maxRules) {
       toast({
         title: "Limită depășită",
-        description: `Ai ${totalCount}/${MAX_RULES} reguli. Contactează administratorul pentru mai multe.`,
+        description: `Ai ${totalCount}/${maxRules} reguli. Contactează administratorul pentru mai multe.`,
         variant: "destructive",
       });
       return;
