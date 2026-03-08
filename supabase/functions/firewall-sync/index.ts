@@ -16,31 +16,48 @@ const DDOS_STANDARD_RULES = [
   { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Std] Block Bogons", notes: "-s 0.0.0.0/8 -j DROP; -s 224.0.0.0/4 -j DROP", priority: 6 },
 ];
 
-// ============ PREMIUM DDoS Protection (activare admin) ============
+// ============ PREMIUM DDoS Protection - Smart Rules ============
+// Philosophy: Keep services alive. Per-IP rate limiting, sinkhole redirect,
+// ESTABLISHED priority, SYN cookies, hashlimit instead of global limits
 const DDOS_PREMIUM_RULES = [
-  // Toate regulile standard, plus:
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Drop Invalid Packets", notes: "-m state --state INVALID -j DROP", priority: 1 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block XMAS Packets", notes: "--tcp-flags ALL ALL -j DROP", priority: 2 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block NULL Packets", notes: "--tcp-flags ALL NONE -j DROP", priority: 3 },
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Fragmented", notes: "-f -j DROP", priority: 4 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] SYN Flood Protect", notes: "--syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT", priority: 5 },
-  { direction: "INPUT", protocol: "icmp", action: "DROP", label: "[DDoS-Pro] ICMP Flood Limit", notes: "--icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT", priority: 6 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] UDP Flood Protect", notes: "-m limit --limit 10/s --limit-burst 20 -j ACCEPT", priority: 7 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] RST Flood Protect", notes: "--tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT", priority: 8 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn Limit HTTP", notes: "--dport 80 -m connlimit --connlimit-above 50 -j DROP", priority: 9, port: 80 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn Limit HTTPS", notes: "--dport 443 -m connlimit --connlimit-above 50 -j DROP", priority: 10, port: 443 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Slowloris Protect", notes: "--dport 80 -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 11 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] DNS Amplification", notes: "--sport 53 -m length --length 512:65535 -j DROP", priority: 12, port: 53 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] NTP Amplification", notes: "--sport 123 -m length --length 48:65535 -j DROP", priority: 13, port: 123 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SSDP Block", notes: "--dport 1900 -j DROP", priority: 14, port: 1900 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] Chargen Block", notes: "--dport 19 -j DROP", priority: 15, port: 19 },
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SNMP Amplification", notes: "--sport 161 -m length --length 200:65535 -j DROP", priority: 16, port: 161 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] New Conn Rate Limit", notes: "-m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 17 },
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 0/8", notes: "-s 0.0.0.0/8 -j DROP", priority: 18 },
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 127/8", notes: "-s 127.0.0.0/8 -j DROP", priority: 19 },
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Multicast", notes: "-s 224.0.0.0/4 -j DROP", priority: 20 },
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Reserved", notes: "-s 240.0.0.0/4 -j DROP", priority: 21 },
+  // Phase 1: Established connections ALWAYS pass
+  { direction: "INPUT", protocol: "all", action: "ACCEPT", label: "[DDoS-Pro] Allow Established/Related", notes: "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT", priority: 1 },
+  { direction: "INPUT", protocol: "all", action: "ACCEPT", label: "[DDoS-Pro] Allow Loopback", notes: "-i lo -j ACCEPT", priority: 2 },
+  // Phase 2: Drop malformed
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Drop Invalid State", notes: "-m conntrack --ctstate INVALID -j DROP", priority: 3 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block XMAS Scan", notes: "--tcp-flags ALL ALL -j DROP", priority: 4 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block NULL Scan", notes: "--tcp-flags ALL NONE -j DROP", priority: 5 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Fragmented", notes: "-f -j DROP", priority: 6 },
+  // Phase 3: Per-IP hashlimit
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] SYN Hashlimit /IP", notes: "hashlimit 15/s per src burst 30", priority: 7 },
+  { direction: "INPUT", protocol: "icmp", action: "DROP", label: "[DDoS-Pro] ICMP Hashlimit /IP", notes: "hashlimit 5/s per src burst 10", priority: 8 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] UDP Hashlimit /IP", notes: "hashlimit 20/s per src burst 40", priority: 9 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] RST Hashlimit /IP", notes: "RST hashlimit 5/s per src", priority: 10 },
+  // Phase 4: Connection limits per IP
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn/IP Limit HTTP", notes: "connlimit 80/src port 80", priority: 11, port: 80 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn/IP Limit HTTPS", notes: "connlimit 80/src port 443", priority: 12, port: 443 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] New Conn Rate /IP", notes: "hashlimit new 30/s per src", priority: 13 },
+  // Phase 5: Sinkhole
+  { direction: "PREROUTING", protocol: "tcp", action: "DNAT", label: "[DDoS-Pro] Sinkhole SYN Flood", notes: "DNAT to 192.0.2.1 excess SYN", priority: 14 },
+  { direction: "PREROUTING", protocol: "udp", action: "DNAT", label: "[DDoS-Pro] Sinkhole UDP Flood", notes: "DNAT to 192.0.2.1 excess UDP", priority: 15 },
+  // Phase 6: Anti-Slowloris
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Slowloris /IP Protect", notes: "hashlimit new 20/s per src port 80", priority: 16, port: 80 },
+  // Phase 7: Amplification
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] DNS Amplification", notes: "--sport 53 -m length --length 512:65535 -j DROP", priority: 17, port: 53 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] NTP Amplification", notes: "--sport 123 -m length --length 48:65535 -j DROP", priority: 18, port: 123 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SSDP Block", notes: "--dport 1900 -j DROP", priority: 19, port: 1900 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] Chargen Block", notes: "--dport 19 -j DROP", priority: 20, port: 19 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SNMP Amplification", notes: "--sport 161 -m length --length 200:65535 -j DROP", priority: 21, port: 161 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] Memcached Amplification", notes: "--dport 11211 -j DROP", priority: 22, port: 11211 },
+  // Phase 8: Bogon
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 0/8", notes: "-s 0.0.0.0/8 -j DROP", priority: 23 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 127/8", notes: "-s 127.0.0.0/8 -j DROP", priority: 24 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Multicast", notes: "-s 224.0.0.0/4 -j DROP", priority: 25 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Reserved", notes: "-s 240.0.0.0/4 -j DROP", priority: 26 },
 ];
+
+// Sinkhole IP - traffic redirected here during attacks (RFC 5737 TEST-NET-1)
+const SINKHOLE_IP = "192.0.2.1";
 
 function generateStandardIptables(targetIp: string): string[] {
   return [
@@ -60,54 +77,89 @@ function generateStandardIptables(targetIp: string): string[] {
 }
 
 function generatePremiumIptables(targetIp: string): string[] {
+  const t = targetIp;
+  const s = SINKHOLE_IP;
   return [
-    `# === PREMIUM DDoS Full Protection for ${targetIp} ===`,
+    `# ╔══════════════════════════════════════════════════════════════╗`,
+    `# ║  PREMIUM DDoS Smart Protection for ${t}`,
+    `# ║  Strategy: Keep services alive, redirect attacks to sinkhole`,
+    `# ╚══════════════════════════════════════════════════════════════╝`,
     "",
-    "# Invalid/malformed packets",
-    `iptables -A INPUT -d ${targetIp} -m state --state INVALID -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL ALL -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL NONE -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -f -j DROP`,
+    "# ── Kernel tuning (SYN cookies + conntrack) ──",
+    "sysctl -w net.ipv4.tcp_syncookies=1",
+    "sysctl -w net.ipv4.tcp_timestamps=1",
+    "sysctl -w net.ipv4.tcp_tw_reuse=1",
+    "sysctl -w net.ipv4.tcp_fin_timeout=15",
+    "sysctl -w net.ipv4.tcp_max_syn_backlog=8192",
+    "sysctl -w net.netfilter.nf_conntrack_max=500000",
+    "sysctl -w net.ipv4.tcp_keepalive_time=300",
+    "sysctl -w net.ipv4.tcp_keepalive_intvl=15",
+    "sysctl -w net.ipv4.tcp_keepalive_probes=5",
+    "sysctl -w net.ipv4.conf.all.rp_filter=1",
+    "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1",
     "",
-    "# SYN flood (agresiv)",
-    `iptables -A INPUT -d ${targetIp} -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT`,
-    `iptables -A INPUT -d ${targetIp} -p tcp --syn -j DROP`,
+    "# ── Phase 1: ESTABLISHED/RELATED always pass (services stay alive) ──",
+    `iptables -A INPUT -d ${t} -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT`,
+    `iptables -A INPUT -i lo -j ACCEPT`,
     "",
-    "# ICMP flood",
-    `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT`,
-    `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -j DROP`,
+    "# ── Phase 2: Drop malformed packets ──",
+    `iptables -A INPUT -d ${t} -m conntrack --ctstate INVALID -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --tcp-flags ALL ALL -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --tcp-flags ALL NONE -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --tcp-flags SYN,RST SYN,RST -j DROP`,
+    `iptables -A INPUT -d ${t} -f -j DROP`,
     "",
-    "# UDP flood",
-    `iptables -A INPUT -d ${targetIp} -p udp -m limit --limit 10/s --limit-burst 20 -j ACCEPT`,
+    "# ── Phase 3: Per-IP hashlimit (only blocks abusive source IPs) ──",
+    `# SYN: allow 15/s per source IP, excess gets dropped`,
+    `iptables -A INPUT -d ${t} -p tcp --syn -m hashlimit --hashlimit-above 15/s --hashlimit-burst 30 --hashlimit-mode srcip --hashlimit-name syn_${t.replace(/\./g, '_')} -j DROP`,
+    `# ICMP: allow 5/s per source IP`,
+    `iptables -A INPUT -d ${t} -p icmp --icmp-type echo-request -m hashlimit --hashlimit-above 5/s --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name icmp_${t.replace(/\./g, '_')} -j DROP`,
+    `# UDP: allow 20/s per source IP`,
+    `iptables -A INPUT -d ${t} -p udp -m hashlimit --hashlimit-above 20/s --hashlimit-burst 40 --hashlimit-mode srcip --hashlimit-name udp_${t.replace(/\./g, '_')} -j DROP`,
+    `# RST: allow 5/s per source IP`,
+    `iptables -A INPUT -d ${t} -p tcp --tcp-flags RST RST -m hashlimit --hashlimit-above 5/s --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name rst_${t.replace(/\./g, '_')} -j DROP`,
     "",
-    "# RST flood",
-    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT`,
-    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags RST RST -j DROP`,
+    "# ── Phase 4: Per-IP connection limits (not global) ──",
+    `iptables -A INPUT -d ${t} -p tcp --dport 80 -m connlimit --connlimit-above 80 --connlimit-mask 32 -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --dport 443 -m connlimit --connlimit-above 80 --connlimit-mask 32 -j DROP`,
+    `# New connection rate per source IP`,
+    `iptables -A INPUT -d ${t} -p tcp -m conntrack --ctstate NEW -m hashlimit --hashlimit-above 30/s --hashlimit-burst 50 --hashlimit-mode srcip --hashlimit-name newconn_${t.replace(/\./g, '_')} -j DROP`,
     "",
-    "# Connection limits HTTP/HTTPS",
-    `iptables -A INPUT -d ${targetIp} -p tcp --dport 80 -m connlimit --connlimit-above 50 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p tcp --dport 443 -m connlimit --connlimit-above 50 -j DROP`,
+    `# ── Phase 5: Sinkhole redirect (attack traffic → ${s}) ──`,
+    `# Excess SYN flood traffic redirected to sinkhole instead of dropped`,
+    `iptables -t nat -A PREROUTING -d ${t} -p tcp --syn -m hashlimit --hashlimit-above 50/s --hashlimit-burst 80 --hashlimit-mode srcip --hashlimit-name sink_syn_${t.replace(/\./g, '_')} -j DNAT --to-destination ${s}`,
+    `# Excess UDP flood traffic redirected to sinkhole`,
+    `iptables -t nat -A PREROUTING -d ${t} -p udp -m hashlimit --hashlimit-above 50/s --hashlimit-burst 80 --hashlimit-mode srcip --hashlimit-name sink_udp_${t.replace(/\./g, '_')} -j DNAT --to-destination ${s}`,
+    `# Route sinkhole to blackhole`,
+    `ip route add blackhole ${s}/32 2>/dev/null || true`,
     "",
-    "# Slowloris",
-    `iptables -A INPUT -d ${targetIp} -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT`,
+    "# ── Phase 6: Anti-Slowloris per IP ──",
+    `iptables -A INPUT -d ${t} -p tcp --dport 80 -m conntrack --ctstate NEW -m hashlimit --hashlimit-above 20/s --hashlimit-burst 30 --hashlimit-mode srcip --hashlimit-name slowloris_${t.replace(/\./g, '_')} -j DROP`,
+    `iptables -A INPUT -d ${t} -p tcp --dport 443 -m conntrack --ctstate NEW -m hashlimit --hashlimit-above 20/s --hashlimit-burst 30 --hashlimit-mode srcip --hashlimit-name slowloris_s_${t.replace(/\./g, '_')} -j DROP`,
     "",
-    "# New connection rate limit",
-    `iptables -A INPUT -d ${targetIp} -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT`,
+    "# ── Phase 7: Amplification attack protection ──",
+    `iptables -A INPUT -d ${t} -p udp --sport 53 -m length --length 512:65535 -j DROP`,
+    `iptables -A INPUT -d ${t} -p udp --sport 123 -m length --length 48:65535 -j DROP`,
+    `iptables -A INPUT -d ${t} -p udp --dport 1900 -j DROP`,
+    `iptables -A INPUT -d ${t} -p udp --dport 19 -j DROP`,
+    `iptables -A INPUT -d ${t} -p udp --sport 161 -m length --length 200:65535 -j DROP`,
+    `iptables -A INPUT -d ${t} -p udp --dport 11211 -j DROP`,
     "",
-    "# Amplification attacks",
-    `iptables -A INPUT -d ${targetIp} -p udp --sport 53 -m length --length 512:65535 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p udp --sport 123 -m length --length 48:65535 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p udp --dport 1900 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p udp --dport 19 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -p udp --sport 161 -m length --length 200:65535 -j DROP`,
+    "# ── Phase 8: Bogon/spoofed sources ──",
+    `iptables -A INPUT -d ${t} -s 0.0.0.0/8 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 127.0.0.0/8 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 224.0.0.0/4 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 240.0.0.0/4 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 169.254.0.0/16 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 192.0.2.0/24 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 198.51.100.0/24 -j DROP`,
+    `iptables -A INPUT -d ${t} -s 203.0.113.0/24 -j DROP`,
     "",
-    "# Bogon/spoofed sources",
-    `iptables -A INPUT -d ${targetIp} -s 0.0.0.0/8 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -s 127.0.0.0/8 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -s 224.0.0.0/4 -j DROP`,
-    `iptables -A INPUT -d ${targetIp} -s 240.0.0.0/4 -j DROP`,
-    "",
-    `# === End PREMIUM DDoS for ${targetIp} ===`,
+    `# ╔══════════════════════════════════════════════════════════════╗`,
+    `# ║  End PREMIUM DDoS for ${t}`,
+    `# ║  Services remain active — only abusive IPs get blocked/sinked`,
+    `# ╚══════════════════════════════════════════════════════════════╝`,
     "",
   ];
 }
@@ -198,11 +250,15 @@ Deno.serve(async (req) => {
     if (format === "iptables") {
       const lines = [
         "#!/bin/bash",
-        "# Generated by Hoxta Firewall Manager",
-        `# Date: ${new Date().toISOString()}`,
-        `# User Rules: ${rules.length}`,
-        `# Standard DDoS IPs: ${standardIps.length}`,
-        `# Premium DDoS IPs: ${premiumIps.length}`,
+        "# ╔══════════════════════════════════════════════════════════════╗",
+        "# ║  Generated by Hoxta Firewall Manager                       ║",
+        `# ║  Date: ${new Date().toISOString()}`,
+        `# ║  User Rules: ${rules.length}`,
+        `# ║  Standard DDoS IPs: ${standardIps.length}`,
+        `# ║  Premium DDoS IPs: ${premiumIps.length}`,
+        "# ╚══════════════════════════════════════════════════════════════╝",
+        "",
+        "set -e",
         "",
         "*filter",
         ":INPUT ACCEPT [0:0]",
@@ -211,14 +267,15 @@ Deno.serve(async (req) => {
         "",
       ];
 
-      // Premium DDoS first (highest priority, fullest protection)
+      // Premium DDoS first (smart protection - services stay alive)
       if (premiumIps.length > 0) {
-        lines.push("# ========== PREMIUM DDOS PROTECTION ==========");
+        lines.push("# ╔══════════════════════════════════════════════════════════════╗");
+        lines.push("# ║  PREMIUM DDOS SMART PROTECTION                             ║");
+        lines.push("# ║  Per-IP rate limiting + sinkhole redirect + SYN cookies     ║");
+        lines.push("# ╚══════════════════════════════════════════════════════════════╝");
         for (const ip of premiumIps) {
           lines.push(...generatePremiumIptables(ip.ip_address));
         }
-        lines.push("# ========== END PREMIUM DDOS ==========");
-        lines.push("");
       }
 
       // Standard DDoS for non-premium users
@@ -279,6 +336,7 @@ Deno.serve(async (req) => {
         source_ip: "0.0.0.0/0",
         user_id: ip.user_id,
         tier: "premium",
+        sinkhole_ip: SINKHOLE_IP,
       }))
     );
 
@@ -287,7 +345,12 @@ Deno.serve(async (req) => {
         count: rules.length,
         ddos_standard_rules: standardDdosJson.length,
         ddos_premium_rules: premiumDdosJson.length,
+        sinkhole_ip: SINKHOLE_IP,
         generated_at: new Date().toISOString(),
+        protection_strategy: {
+          premium: "Smart protection: per-IP hashlimit, sinkhole redirect, ESTABLISHED priority, SYN cookies. Services stay alive during attacks.",
+          standard: "Basic protection: global rate limits, bogon blocking, invalid packet drops.",
+        },
         ddos_standard: standardDdosJson,
         ddos_premium: premiumDdosJson,
         rules: rules.map((r) => ({
