@@ -82,7 +82,7 @@ const Dashboard = () => {
         await updateRule.mutateAsync({ id: editingRule.id, ...data });
         toast({ title: "Regulă actualizată!" });
       } else {
-        if (totalCount >= MAX_RULES) {
+        if (totalCount >= maxRules) {
           toast({ title: "Limită atinsă", description: "Contactează administratorul.", variant: "destructive" });
           return;
         }
