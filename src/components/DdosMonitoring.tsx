@@ -122,17 +122,7 @@ export function DdosMonitoring() {
         </Card>
       </div>
 
-      {/* Sinkhole info */}
-      {hasDdos && (
-        <div className="glass rounded-2xl p-4 border border-primary/20">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Sinkhole IP:</span>
-            <code className="text-sm font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">{sinkholeIp}</code>
-            <span className="text-xs text-muted-foreground ml-2">Traficul de atac este redirecționat aici</span>
-          </div>
-        </div>
-      )}
+      {/* Sinkhole info removed - visible only in admin panel */}
 
       {/* Events list */}
       <Card className="glass border-border/30">
