@@ -50,7 +50,7 @@ const Admin = () => {
             <Badge className="gradient-btn text-primary-foreground border-0 text-xs">Admin</Badge>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/self-host")} className="rounded-xl text-xs hidden sm:flex">
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin/self-host")} className="rounded-xl text-xs">
               <HardDrive className="h-3.5 w-3.5 mr-1.5" />
               Self-Host
             </Button>
