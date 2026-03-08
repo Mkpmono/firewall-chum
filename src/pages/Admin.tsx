@@ -161,6 +161,10 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
             <label className="text-xs text-muted-foreground">Email</label>
             <Input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Limită Reguli</label>
+            <Input type="number" value={maxRulesVal} onChange={(e) => setMaxRulesVal(parseInt(e.target.value) || 0)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl w-32" />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
               <Save className="h-3.5 w-3.5 mr-1" /> Salvează
