@@ -70,59 +70,65 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-[350px_1fr] gap-6">
-          {/* User list */}
-          <div className="glass rounded-2xl overflow-hidden">
-            <div className="p-4 border-b border-border/50 flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              <h2 className="font-semibold text-sm text-foreground">Clienți</h2>
-              <Badge variant="secondary" className="ml-auto text-xs">{profiles?.length || 0}</Badge>
+        {showWhmcs ? (
+          <WhmcsModule whmcsApiSecret={whmcsSecret} onSecretChange={setWhmcsSecret} />
+        ) : (
+          <>
+            <div className="grid lg:grid-cols-[350px_1fr] gap-6">
+              {/* User list */}
+              <div className="glass rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-border/50 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <h2 className="font-semibold text-sm text-foreground">Clienți</h2>
+                  <Badge variant="secondary" className="ml-auto text-xs">{profiles?.length || 0}</Badge>
+                </div>
+                {profilesLoading ? (
+                  <div className="p-8 text-center text-muted-foreground animate-pulse-glow">Se încarcă...</div>
+                ) : (
+                  <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {profiles?.map((profile) => (
+                      <button
+                        key={profile.user_id}
+                        onClick={() => setSelectedUserId(profile.user_id)}
+                        className={`w-full text-left px-4 py-3 border-b border-border/30 flex items-center gap-3 transition-all hover:bg-muted/50 ${
+                          selectedUserId === profile.user_id ? "bg-primary/10 border-l-2 border-l-primary" : ""
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate font-medium">{profile.display_name || "—"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* User details */}
+              <div className="space-y-6">
+                {!selectedUserId ? (
+                  <div className="glass rounded-2xl p-16 text-center">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+                    <p className="text-muted-foreground">Selectează un client din lista din stânga</p>
+                  </div>
+                ) : (
+                  <>
+                    <ClientProfileSection userId={selectedUserId} profile={selectedProfile} onDeleted={() => setSelectedUserId(null)} />
+                    <ClientServersSection userId={selectedUserId} />
+                    <ClientIpsSection userId={selectedUserId} />
+                    <ClientRulesSection userId={selectedUserId} />
+                  </>
+                )}
+              </div>
             </div>
-            {profilesLoading ? (
-              <div className="p-8 text-center text-muted-foreground animate-pulse-glow">Se încarcă...</div>
-            ) : (
-              <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-                {profiles?.map((profile) => (
-                  <button
-                    key={profile.user_id}
-                    onClick={() => setSelectedUserId(profile.user_id)}
-                    className={`w-full text-left px-4 py-3 border-b border-border/30 flex items-center gap-3 transition-all hover:bg-muted/50 ${
-                      selectedUserId === profile.user_id ? "bg-primary/10 border-l-2 border-l-primary" : ""
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate font-medium">{profile.display_name || "—"}</p>
-                      <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* User details */}
-          <div className="space-y-6">
-            {!selectedUserId ? (
-              <div className="glass rounded-2xl p-16 text-center">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                <p className="text-muted-foreground">Selectează un client din lista din stânga</p>
-              </div>
-            ) : (
-              <>
-                <ClientProfileSection userId={selectedUserId} profile={selectedProfile} onDeleted={() => setSelectedUserId(null)} />
-                <ClientServersSection userId={selectedUserId} />
-                <ClientIpsSection userId={selectedUserId} />
-                <ClientRulesSection userId={selectedUserId} />
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Presets Manager - always visible */}
-        <div className="mt-8">
-          <AdminPresetsManager />
-        </div>
+            {/* Presets Manager - always visible */}
+            <div className="mt-8">
+              <AdminPresetsManager />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
