@@ -66,24 +66,7 @@ const Auth = () => {
 
         {/* Form */}
         <div className="glass rounded-2xl p-8">
-          <div className="flex mb-8 bg-muted rounded-xl p-1">
-            <button
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                isLogin ? "gradient-btn text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setIsLogin(true)}
-            >
-              Autentificare
-            </button>
-            <button
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                !isLogin ? "gradient-btn text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setIsLogin(false)}
-            >
-              Înregistrare
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-6">Autentificare</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
