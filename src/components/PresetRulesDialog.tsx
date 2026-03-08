@@ -313,9 +313,11 @@ interface PresetRulesDialogProps {
 
 export function PresetRulesDialog({ open, onClose, onApply, loading, currentRuleCount = 0, maxRules = 20 }: PresetRulesDialogProps) {
   const { data: myIps } = useMyIps();
+  const { data: myProfile } = useMyProfile();
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedIp, setSelectedIp] = useState<string>("");
 
+  const hasPremiumDdos = (myProfile as any)?.ddos_protection === true;
   const hasIps = myIps && myIps.length > 0;
   const preset = PRESETS.find((p) => p.id === selectedPreset);
   const remainingSlots = maxRules - currentRuleCount;
