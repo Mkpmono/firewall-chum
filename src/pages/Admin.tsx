@@ -140,6 +140,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
         display_name: displayName.trim() || null,
         email: email.trim() || null,
         max_rules: maxRulesVal,
+        sinkhole_ip: sinkholeIp.trim() || "192.0.2.1",
       });
       toast({ title: "Profil actualizat!" });
       setEditing(false);
