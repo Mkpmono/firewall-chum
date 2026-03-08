@@ -326,6 +326,166 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Rate Limiting (iptables) ──
+    lines.push("");
+    lines.push("# ══════════════════════════════════════════");
+    lines.push("# ── Rate Limiting (Anti-Flood) ──");
+    lines.push("# ══════════════════════════════════════════");
+    lines.push("");
+    lines.push("# HTTP/HTTPS connection rate limiting");
+    lines.push("iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m recent --set --name HTTP");
+    lines.push("iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m recent --update --seconds 10 --hitcount 50 --name HTTP -j DROP");
+    lines.push("iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m recent --set --name HTTPS");
+    lines.push("iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m recent --update --seconds 10 --hitcount 50 --name HTTPS -j DROP");
+    lines.push("");
+    lines.push("# SSH brute-force rate limiting");
+    lines.push("iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSH");
+    lines.push("iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 5 --name SSH -j DROP");
+    lines.push("");
+    lines.push("# Global per-IP new connection limit");
+    lines.push("iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m hashlimit --hashlimit-above 30/s --hashlimit-burst 50 --hashlimit-mode srcip --hashlimit-name global_rate -j DROP");
+    lines.push("");
+
+    // ── Fail2ban auto-install and config ──
+    lines.push("# ══════════════════════════════════════════");
+    lines.push("# ── Fail2ban (Auto-install & Configure) ──");
+    lines.push("# ══════════════════════════════════════════");
+    lines.push("");
+    lines.push("if ! command -v fail2ban-server &>/dev/null; then");
+    lines.push("  echo '[Hoxta] Installing fail2ban...'");
+    lines.push("  apt-get update -qq && apt-get install -y fail2ban >/dev/null 2>&1 || {");
+    lines.push("    yum install -y epel-release >/dev/null 2>&1 && yum install -y fail2ban >/dev/null 2>&1 || true");
+    lines.push("  }");
+    lines.push("fi");
+    lines.push("");
+    lines.push("if command -v fail2ban-server &>/dev/null; then");
+    lines.push("  mkdir -p /etc/fail2ban");
+    lines.push("  cat > /etc/fail2ban/jail.local << 'F2B_CONF'");
+    lines.push("[DEFAULT]");
+    lines.push("bantime = 3600");
+    lines.push("findtime = 600");
+    lines.push("maxretry = 5");
+    lines.push("banaction = iptables-multiport");
+    lines.push("");
+    lines.push("[sshd]");
+    lines.push("enabled = true");
+    lines.push("port = ssh");
+    lines.push("filter = sshd");
+    lines.push("logpath = /var/log/auth.log");
+    lines.push("maxretry = 3");
+    lines.push("bantime = 7200");
+    lines.push("");
+    lines.push("[sshd-ddos]");
+    lines.push("enabled = true");
+    lines.push("port = ssh");
+    lines.push("filter = sshd");
+    lines.push("logpath = /var/log/auth.log");
+    lines.push("maxretry = 6");
+    lines.push("bantime = 3600");
+    lines.push("");
+    lines.push("[apache-auth]");
+    lines.push("enabled = true");
+    lines.push("port = http,https");
+    lines.push("filter = apache-auth");
+    lines.push("logpath = /var/log/apache2/*error.log");
+    lines.push("maxretry = 5");
+    lines.push("");
+    lines.push("[nginx-http-auth]");
+    lines.push("enabled = true");
+    lines.push("port = http,https");
+    lines.push("filter = nginx-http-auth");
+    lines.push("logpath = /var/log/nginx/error.log");
+    lines.push("maxretry = 5");
+    lines.push("");
+    lines.push("[nginx-botsearch]");
+    lines.push("enabled = true");
+    lines.push("port = http,https");
+    lines.push("filter = nginx-botsearch");
+    lines.push("logpath = /var/log/nginx/access.log");
+    lines.push("maxretry = 2");
+    lines.push("bantime = 86400");
+    lines.push("");
+    lines.push("[recidive]");
+    lines.push("enabled = true");
+    lines.push("filter = recidive");
+    lines.push("logpath = /var/log/fail2ban.log");
+    lines.push("bantime = 604800");
+    lines.push("findtime = 86400");
+    lines.push("maxretry = 3");
+    lines.push("F2B_CONF");
+    lines.push("");
+    lines.push("  systemctl enable fail2ban 2>/dev/null || true");
+    lines.push("  systemctl restart fail2ban 2>/dev/null || true");
+    lines.push("  echo '[Hoxta] Fail2ban configured and started.'");
+    lines.push("fi");
+    lines.push("");
+
+    // ── User-Agent Blocking ──
+    const blockedAgents = (uaRules || []).map(r => r.pattern);
+    if (blockedAgents.length > 0) {
+      lines.push("# ══════════════════════════════════════════");
+      lines.push("# ── User-Agent Blocking ──");
+      lines.push("# ══════════════════════════════════════════");
+      lines.push("");
+
+      // Nginx config
+      lines.push("# --- Nginx User-Agent blocking ---");
+      lines.push("if [ -d /etc/nginx ]; then");
+      lines.push("  cat > /etc/nginx/conf.d/hoxta-useragent-block.conf << 'NGINX_UA'");
+      lines.push("map $http_user_agent $hoxta_block_ua {");
+      lines.push("  default 0;");
+      for (const ua of blockedAgents) {
+        const escaped = ua.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        lines.push(`  "~*${escaped}" 1;`);
+      }
+      lines.push("}");
+      lines.push("NGINX_UA");
+      lines.push("");
+      lines.push("  # Add to nginx server blocks if not already present");
+      lines.push("  if ! grep -q 'hoxta_block_ua' /etc/nginx/nginx.conf 2>/dev/null; then");
+      lines.push("    echo '[Hoxta] NOTE: Add this to your nginx server block:'");
+      lines.push("    echo '  if ($hoxta_block_ua) { return 403; }'");
+      lines.push("  fi");
+      lines.push("  nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || true");
+      lines.push("  echo '[Hoxta] Nginx User-Agent blocking configured.'");
+      lines.push("fi");
+      lines.push("");
+
+      // Apache config
+      lines.push("# --- Apache User-Agent blocking ---");
+      lines.push("if [ -d /etc/apache2 ] || [ -d /etc/httpd ]; then");
+      lines.push("  APACHE_CONF_DIR=\"/etc/apache2/conf-available\"");
+      lines.push("  [ -d /etc/httpd/conf.d ] && APACHE_CONF_DIR=\"/etc/httpd/conf.d\"");
+      lines.push("  cat > \"$APACHE_CONF_DIR/hoxta-useragent-block.conf\" << 'APACHE_UA'");
+      lines.push("<IfModule mod_rewrite.c>");
+      lines.push("  RewriteEngine On");
+      for (const ua of blockedAgents) {
+        const escaped = ua.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        lines.push(`  RewriteCond %{HTTP_USER_AGENT} "${escaped}" [NC,OR]`);
+      }
+      // Remove trailing OR from last line by adding a dummy always-false condition
+      lines.push("  RewriteCond %{HTTP_USER_AGENT} \"^$\" [NC]");
+      lines.push("  RewriteRule .* - [F,L]");
+      lines.push("</IfModule>");
+      lines.push("APACHE_UA");
+      lines.push("  a2enconf hoxta-useragent-block 2>/dev/null || true");
+      lines.push("  apachectl graceful 2>/dev/null || systemctl reload httpd 2>/dev/null || true");
+      lines.push("  echo '[Hoxta] Apache User-Agent blocking configured.'");
+      lines.push("fi");
+      lines.push("");
+
+      // iptables string match as universal fallback
+      lines.push("# --- iptables string-match fallback for User-Agent blocking ---");
+      lines.push("if iptables -m string --help 2>&1 | grep -q 'string'; then");
+      for (const ua of blockedAgents) {
+        lines.push(`  iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string "${ua}" -j DROP 2>/dev/null || true`);
+        lines.push(`  iptables -A INPUT -p tcp --dport 443 -m string --algo bm --string "${ua}" -j DROP 2>/dev/null || true`);
+      }
+      lines.push("  echo '[Hoxta] iptables User-Agent string matching applied.'");
+      lines.push("fi");
+      lines.push("");
+    }
+
     lines.push("");
     lines.push("echo '[Hoxta] Firewall rules applied successfully.'")
 
