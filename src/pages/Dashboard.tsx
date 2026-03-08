@@ -27,6 +27,7 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   const maxRules = (myProfile as any)?.max_rules ?? 20;
+  const hasDdos = (myProfile as any)?.ddos_protection === true;
   const totalCount = rules?.length || 0;
   const activeCount = rules?.filter((r) => r.enabled).length || 0;
   const atLimit = totalCount >= maxRules;
