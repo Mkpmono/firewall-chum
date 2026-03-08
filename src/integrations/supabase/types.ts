@@ -38,6 +38,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ddos_events: {
+        Row: {
+          attack_type: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          ip_address: string
+          notes: string | null
+          packets_blocked: number | null
+          packets_redirected: number | null
+          severity: string
+          source_ips: string[] | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attack_type?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          ip_address: string
+          notes?: string | null
+          packets_blocked?: number | null
+          packets_redirected?: number | null
+          severity?: string
+          source_ips?: string[] | null
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attack_type?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          ip_address?: string
+          notes?: string | null
+          packets_blocked?: number | null
+          packets_redirected?: number | null
+          severity?: string
+          source_ips?: string[] | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       firewall_rules: {
         Row: {
           action: string
@@ -183,6 +231,7 @@ export type Database = {
           email: string | null
           id: string
           max_rules: number
+          sinkhole_ip: string | null
           updated_at: string
           user_id: string
         }
@@ -193,6 +242,7 @@ export type Database = {
           email?: string | null
           id?: string
           max_rules?: number
+          sinkhole_ip?: string | null
           updated_at?: string
           user_id: string
         }
@@ -203,6 +253,7 @@ export type Database = {
           email?: string | null
           id?: string
           max_rules?: number
+          sinkhole_ip?: string | null
           updated_at?: string
           user_id?: string
         }

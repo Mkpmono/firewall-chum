@@ -6,6 +6,7 @@ import { useFirewallRules } from "@/hooks/useFirewallRules";
 import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
 import { PresetRulesDialog } from "@/components/PresetRulesDialog";
+import { DdosMonitoring } from "@/components/DdosMonitoring";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
@@ -213,6 +214,11 @@ const Dashboard = () => {
               Regulă Nouă
             </Button>
           </div>
+        </div>
+
+        {/* DDoS Monitoring */}
+        <div className="mb-8">
+          <DdosMonitoring />
         </div>
 
         {/* Table */}

@@ -123,10 +123,13 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
 
+  const [sinkholeIp, setSinkholeIp] = useState("192.0.2.1");
+
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
     setEmail(profile?.email || "");
     setMaxRulesVal(profile?.max_rules ?? 20);
+    setSinkholeIp(profile?.sinkhole_ip || "192.0.2.1");
     setEditing(true);
   };
 
@@ -137,6 +140,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
         display_name: displayName.trim() || null,
         email: email.trim() || null,
         max_rules: maxRulesVal,
+        sinkhole_ip: sinkholeIp.trim() || "192.0.2.1",
       });
       toast({ title: "Profil actualizat!" });
       setEditing(false);
@@ -171,6 +175,10 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
             <label className="text-xs text-muted-foreground">Limită Reguli</label>
             <Input type="number" value={maxRulesVal} onChange={(e) => setMaxRulesVal(parseInt(e.target.value) || 0)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl w-32" />
           </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Sinkhole IP (DDoS redirect)</label>
+            <Input value={sinkholeIp} onChange={(e) => setSinkholeIp(e.target.value)} placeholder="192.0.2.1" className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl w-48 font-mono" />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
               <Save className="h-3.5 w-3.5 mr-1" /> Salvează
@@ -187,6 +195,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
             <div className="flex items-center gap-4 mt-1">
               <p className="text-xs text-muted-foreground">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+              <p className="text-xs text-muted-foreground">Sinkhole: <code className="text-primary font-mono text-[11px]">{profile?.sinkhole_ip || "192.0.2.1"}</code></p>
               <DdosToggle userId={userId} profile={profile} />
             </div>
           </div>

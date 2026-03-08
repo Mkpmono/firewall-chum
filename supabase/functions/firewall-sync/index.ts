@@ -56,8 +56,8 @@ const DDOS_PREMIUM_RULES = [
   { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Reserved", notes: "-s 240.0.0.0/4 -j DROP", priority: 26 },
 ];
 
-// Sinkhole IP - traffic redirected here during attacks (RFC 5737 TEST-NET-1)
-const SINKHOLE_IP = "192.0.2.1";
+// Default Sinkhole IP - can be overridden per client via profiles.sinkhole_ip
+const DEFAULT_SINKHOLE_IP = "192.0.2.1";
 
 function generateStandardIptables(targetIp: string): string[] {
   return [
@@ -76,9 +76,9 @@ function generateStandardIptables(targetIp: string): string[] {
   ];
 }
 
-function generatePremiumIptables(targetIp: string): string[] {
+function generatePremiumIptables(targetIp: string, sinkholeIp?: string): string[] {
   const t = targetIp;
-  const s = SINKHOLE_IP;
+  const s = sinkholeIp || DEFAULT_SINKHOLE_IP;
   return [
     `# ╔══════════════════════════════════════════════════════════════╗`,
     `# ║  PREMIUM DDoS Smart Protection for ${t}`,
@@ -209,11 +209,12 @@ Deno.serve(async (req) => {
     interface IpEntry { user_id: string; ip_address: string }
     let premiumIps: IpEntry[] = [];
     let standardIps: IpEntry[] = [];
+    const sinkholeMap: Record<string, string> = {}; // user_id -> sinkhole_ip
 
     if (userId) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_id, ddos_protection")
+        .select("user_id, ddos_protection, sinkhole_ip")
         .eq("user_id", userId)
         .maybeSingle();
       const { data: ips } = await supabase
@@ -223,16 +224,19 @@ Deno.serve(async (req) => {
       const userIps = ips || [];
       if (profile?.ddos_protection) {
         premiumIps = userIps;
+        sinkholeMap[userId] = profile.sinkhole_ip || DEFAULT_SINKHOLE_IP;
       } else {
         standardIps = userIps;
       }
     } else {
-      // All users
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, ddos_protection");
+        .select("user_id, ddos_protection, sinkhole_ip");
       const premiumUserIds = (profiles || []).filter((p) => p.ddos_protection).map((p) => p.user_id);
       const standardUserIds = (profiles || []).filter((p) => !p.ddos_protection).map((p) => p.user_id);
+      for (const p of profiles || []) {
+        if (p.ddos_protection) sinkholeMap[p.user_id] = p.sinkhole_ip || DEFAULT_SINKHOLE_IP;
+      }
 
       const { data: allIps } = await supabase
         .from("client_ips")
@@ -274,7 +278,7 @@ Deno.serve(async (req) => {
         lines.push("# ║  Per-IP rate limiting + sinkhole redirect + SYN cookies     ║");
         lines.push("# ╚══════════════════════════════════════════════════════════════╝");
         for (const ip of premiumIps) {
-          lines.push(...generatePremiumIptables(ip.ip_address));
+          lines.push(...generatePremiumIptables(ip.ip_address, sinkholeMap[ip.user_id]));
         }
       }
 
