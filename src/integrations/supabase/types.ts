@@ -140,6 +140,39 @@ export type Database = {
         }
         Relationships: []
       }
+      geoip_rules: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string
+          enabled: boolean
+          id: string
+          mode: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mode?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mode?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       preset_template_rules: {
         Row: {
           action: string

@@ -120,6 +120,13 @@ Deno.serve(async (req) => {
       .eq("enabled", true)
       .order("priority", { ascending: true });
 
+    // Get user's GeoIP rules
+    const { data: geoRules } = await supabase
+      .from("geoip_rules")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("enabled", true);
+
     const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
     const hasPremiumDdos = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
@@ -133,6 +140,7 @@ Deno.serve(async (req) => {
       `# ║  Generated: ${new Date().toISOString()}`,
       `# ║  IPs: ${userIps.join(", ") || "none"}`,
       `# ║  DDoS: ${hasPremiumDdos ? "PREMIUM" : "STANDARD"}`,
+      `# ║  GeoIP: ${(geoRules || []).length} rules`,
       "# ╚══════════════════════════════════════════════════════════════╝",
       "",
       "set -e",
@@ -204,8 +212,115 @@ Deno.serve(async (req) => {
       lines.push(line);
     }
 
+    // ── GeoIP Blocking with ipset ──
+    const blacklistCountries = (geoRules || []).filter(r => r.mode === "blacklist").map(r => r.country_code);
+    const whitelistCountries = (geoRules || []).filter(r => r.mode === "whitelist").map(r => r.country_code);
+    const hasGeoIp = blacklistCountries.length > 0 || whitelistCountries.length > 0;
+
+    if (hasGeoIp) {
+      lines.push("");
+      lines.push("# ══════════════════════════════════════════");
+      lines.push("# ── GeoIP Blocking (ipset + xtables-addons) ──");
+      lines.push("# ══════════════════════════════════════════");
+      lines.push("");
+      lines.push("# Auto-install GeoIP dependencies if missing");
+      lines.push("if ! command -v ipset &>/dev/null; then");
+      lines.push("  apt-get update -qq && apt-get install -y ipset xtables-addons-common libtext-csv-xs-perl >/dev/null 2>&1 || {");
+      lines.push("    yum install -y ipset xtables-addons >/dev/null 2>&1 || true");
+      lines.push("  }");
+      lines.push("fi");
+      lines.push("");
+      lines.push("# Download GeoIP database if not present or older than 7 days");
+      lines.push("GEOIP_DIR=\"/usr/share/xt_geoip\"");
+      lines.push("mkdir -p \"$GEOIP_DIR\" 2>/dev/null || true");
+      lines.push("if [ ! -f \"$GEOIP_DIR/.last_update\" ] || [ $(find \"$GEOIP_DIR/.last_update\" -mtime +7 2>/dev/null | wc -l) -gt 0 ]; then");
+      lines.push("  echo '[Hoxta] Updating GeoIP database...'");
+      lines.push("  TMPDIR=$(mktemp -d)");
+      lines.push("  cd \"$TMPDIR\"");
+      lines.push("  # Use DB-IP free database");
+      lines.push("  MONTH=$(date +%Y-%m)");
+      lines.push("  curl -sfL \"https://download.db-ip.com/free/dbip-country-lite-${MONTH}.csv.gz\" -o dbip.csv.gz 2>/dev/null || true");
+      lines.push("  if [ -f dbip.csv.gz ]; then");
+      lines.push("    gunzip -f dbip.csv.gz 2>/dev/null || true");
+      lines.push("    if [ -f dbip.csv ] || [ -f dbip-country-lite-*.csv ]; then");
+      lines.push("      CSV_FILE=$(ls dbip*.csv 2>/dev/null | head -1)");
+      lines.push("      if command -v /usr/lib/xtables-addons/xt_geoip_build &>/dev/null; then");
+      lines.push("        /usr/lib/xtables-addons/xt_geoip_build -D \"$GEOIP_DIR\" \"$CSV_FILE\" >/dev/null 2>&1 || true");
+      lines.push("      elif command -v /usr/libexec/xtables-addons/xt_geoip_build &>/dev/null; then");
+      lines.push("        /usr/libexec/xtables-addons/xt_geoip_build -D \"$GEOIP_DIR\" \"$CSV_FILE\" >/dev/null 2>&1 || true");
+      lines.push("      fi");
+      lines.push("      touch \"$GEOIP_DIR/.last_update\"");
+      lines.push("    fi");
+      lines.push("  fi");
+      lines.push("  cd / && rm -rf \"$TMPDIR\"");
+      lines.push("fi");
+      lines.push("");
+
+      // Check if xt_geoip module is available, fallback to ipset
+      lines.push("# Try xt_geoip kernel module first, fallback to ipset");
+      lines.push("GEOIP_METHOD=\"none\"");
+      lines.push("if modprobe xt_geoip 2>/dev/null; then");
+      lines.push("  GEOIP_METHOD=\"xt_geoip\"");
+      lines.push("elif command -v ipset &>/dev/null; then");
+      lines.push("  GEOIP_METHOD=\"ipset\"");
+      lines.push("fi");
+      lines.push("");
+
+      if (blacklistCountries.length > 0) {
+        const codes = blacklistCountries.join(",");
+        lines.push(`# Blacklist countries: ${codes}`);
+        lines.push(`if [ "$GEOIP_METHOD" = "xt_geoip" ]; then`);
+        lines.push(`  iptables -A INPUT -m geoip --src-cc ${codes} -j DROP`);
+        lines.push(`  echo "[Hoxta] GeoIP blacklist applied via xt_geoip: ${codes}"`);
+        lines.push(`elif [ "$GEOIP_METHOD" = "ipset" ]; then`);
+        lines.push(`  ipset destroy hoxta_geo_blacklist 2>/dev/null || true`);
+        lines.push(`  ipset create hoxta_geo_blacklist hash:net family inet hashsize 65536 maxelem 1000000`);
+        
+        // For ipset, we generate a zone file download approach per country
+        for (const cc of blacklistCountries) {
+          lines.push(`  # Download ${cc} IP ranges`);
+          lines.push(`  curl -sfL "https://www.ipdeny.com/ipblocks/data/aggregated/${cc.toLowerCase()}-aggregated.zone" 2>/dev/null | while read cidr; do`);
+          lines.push(`    [ -n "$cidr" ] && ipset add hoxta_geo_blacklist "$cidr" 2>/dev/null || true`);
+          lines.push(`  done`);
+        }
+        
+        lines.push(`  iptables -A INPUT -m set --match-set hoxta_geo_blacklist src -j DROP`);
+        lines.push(`  echo "[Hoxta] GeoIP blacklist applied via ipset: ${codes}"`);
+        lines.push(`else`);
+        lines.push(`  echo "[Hoxta] WARNING: No GeoIP method available. Install xtables-addons-common or ipset."`);
+        lines.push(`fi`);
+        lines.push("");
+      }
+
+      if (whitelistCountries.length > 0) {
+        const codes = whitelistCountries.join(",");
+        lines.push(`# Whitelist countries (only these allowed): ${codes}`);
+        lines.push(`if [ "$GEOIP_METHOD" = "xt_geoip" ]; then`);
+        lines.push(`  iptables -A INPUT -m geoip --src-cc ${codes} -j ACCEPT`);
+        lines.push(`  iptables -A INPUT -m geoip ! --src-cc ${codes} -j DROP`);
+        lines.push(`  echo "[Hoxta] GeoIP whitelist applied via xt_geoip: ${codes}"`);
+        lines.push(`elif [ "$GEOIP_METHOD" = "ipset" ]; then`);
+        lines.push(`  ipset destroy hoxta_geo_whitelist 2>/dev/null || true`);
+        lines.push(`  ipset create hoxta_geo_whitelist hash:net family inet hashsize 65536 maxelem 1000000`);
+        
+        for (const cc of whitelistCountries) {
+          lines.push(`  curl -sfL "https://www.ipdeny.com/ipblocks/data/aggregated/${cc.toLowerCase()}-aggregated.zone" 2>/dev/null | while read cidr; do`);
+          lines.push(`    [ -n "$cidr" ] && ipset add hoxta_geo_whitelist "$cidr" 2>/dev/null || true`);
+          lines.push(`  done`);
+        }
+        
+        lines.push(`  iptables -A INPUT -m set --match-set hoxta_geo_whitelist src -j ACCEPT`);
+        lines.push(`  iptables -A INPUT -m set ! --match-set hoxta_geo_whitelist src -j DROP`);
+        lines.push(`  echo "[Hoxta] GeoIP whitelist applied via ipset: ${codes}"`);
+        lines.push(`else`);
+        lines.push(`  echo "[Hoxta] WARNING: No GeoIP method available."`);
+        lines.push(`fi`);
+        lines.push("");
+      }
+    }
+
     lines.push("");
-    lines.push("echo '[Hoxta] Firewall rules applied successfully.'");
+    lines.push("echo '[Hoxta] Firewall rules applied successfully.'")
 
     // Update server last sync
     await supabase.from("servers").update({
