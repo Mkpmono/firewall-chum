@@ -225,7 +225,7 @@ const Dashboard = () => {
         onApply={handleApplyPreset}
         loading={presetLoading}
         currentRuleCount={totalCount}
-        maxRules={MAX_RULES}
+        maxRules={maxRules}
       />
     </div>
   );
