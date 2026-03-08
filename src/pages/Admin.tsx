@@ -142,8 +142,10 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [email, setEmail] = useState("");
   const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
-
   const [sinkholeIp, setSinkholeIp] = useState("192.0.2.1");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
@@ -176,6 +178,28 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
       onDeleted();
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword.trim() || newPassword.length < 6) {
+      toast({ title: "Eroare", description: "Parola trebuie să aibă cel puțin 6 caractere.", variant: "destructive" });
+      return;
+    }
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: { target_user_id: userId, new_password: newPassword },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "🔑 Parola a fost resetată!", description: `Parola clientului ${profile?.display_name || profile?.email || ""} a fost schimbată.` });
+      setNewPassword("");
+      setResetOpen(false);
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -219,10 +243,42 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
               <DdosToggle userId={userId} profile={profile} />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
               <Pencil className="h-3.5 w-3.5 mr-1" /> Editează
             </Button>
+            <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="rounded-xl text-primary hover:text-primary">
+                  <KeyRound className="h-3.5 w-3.5 mr-1" /> Resetează Parola
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass border-border/50 rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Resetează parola</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Introdu noua parolă pentru <strong>{profile?.display_name || profile?.email || "client"}</strong>. Minimum 6 caractere.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  type="password"
+                  placeholder="Noua parolă..."
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="bg-muted/50 border-border/50 text-sm rounded-xl"
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl" onClick={() => setNewPassword("")}>Anulare</AlertDialogCancel>
+                  <Button
+                    onClick={handleResetPassword}
+                    disabled={resetting || newPassword.length < 6}
+                    className="rounded-xl gradient-btn text-primary-foreground border-0"
+                  >
+                    {resetting ? "Se resetează..." : "Resetează"}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="outline" className="rounded-xl text-destructive hover:text-destructive">
