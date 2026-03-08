@@ -100,6 +100,7 @@ const Admin = () => {
             ) : (
               <>
                 <ClientProfileSection userId={selectedUserId} profile={selectedProfile} onDeleted={() => setSelectedUserId(null)} />
+                <ClientServersSection userId={selectedUserId} />
                 <ClientIpsSection userId={selectedUserId} />
                 <ClientRulesSection userId={selectedUserId} />
               </>
