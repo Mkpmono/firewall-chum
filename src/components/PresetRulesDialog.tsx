@@ -379,11 +379,11 @@ export function PresetRulesDialog({ open, onClose, onApply, loading, currentRule
                 {currentRuleCount}/{maxRules} reguli folosite
               </Badge>
             </div>
-            {CATEGORIES.map(cat => (
+            {allCategories.map(cat => (
               <div key={cat}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  {PRESETS.filter(p => p.category === cat).map((p) => {
+                  {allPresets.filter(p => p.category === cat).map((p) => {
                     const tooMany = p.rules.length > remainingSlots;
                     const lockedPremium = p.isPremium && !hasPremiumDdos;
                     const disabled = tooMany || lockedPremium;
