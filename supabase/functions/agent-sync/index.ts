@@ -120,6 +120,13 @@ Deno.serve(async (req) => {
       .eq("enabled", true)
       .order("priority", { ascending: true });
 
+    // Get user's GeoIP rules
+    const { data: geoRules } = await supabase
+      .from("geoip_rules")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("enabled", true);
+
     const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
     const hasPremiumDdos = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
