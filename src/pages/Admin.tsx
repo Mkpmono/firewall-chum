@@ -32,6 +32,8 @@ const Admin = () => {
   const { user, signOut } = useAuth();
   const { data: profiles, isLoading: profilesLoading } = useAllProfiles();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showWhmcs, setShowWhmcs] = useState(false);
+  const [whmcsSecret, setWhmcsSecret] = useState("");
   const navigate = useNavigate();
 
   const selectedProfile = profiles?.find((p) => p.user_id === selectedUserId);
