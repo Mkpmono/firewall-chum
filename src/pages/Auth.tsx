@@ -7,7 +7,7 @@ import { Shield, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const isLogin = true;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,21 +18,8 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast({
-          title: "Cont creat!",
-          description: "Verifică email-ul pentru confirmare.",
-        });
-      }
     } catch (error: any) {
       toast({
         title: "Eroare",
@@ -66,24 +53,7 @@ const Auth = () => {
 
         {/* Form */}
         <div className="glass rounded-2xl p-8">
-          <div className="flex mb-8 bg-muted rounded-xl p-1">
-            <button
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                isLogin ? "gradient-btn text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setIsLogin(true)}
-            >
-              Autentificare
-            </button>
-            <button
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                !isLogin ? "gradient-btn text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setIsLogin(false)}
-            >
-              Înregistrare
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-6">Autentificare</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -112,7 +82,7 @@ const Auth = () => {
               />
             </div>
             <Button type="submit" className="w-full h-11 rounded-xl gradient-btn text-primary-foreground font-semibold text-sm border-0 hover:opacity-90 transition-opacity" disabled={loading}>
-              {loading ? "Se încarcă..." : isLogin ? "Autentificare" : "Creare cont"}
+              {loading ? "Se încarcă..." : "Autentificare"}
               {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </form>
