@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser, useAdminProfiles, useAdminRules } from "@/hooks/useAdmin";
 import { RulesTable } from "@/components/RulesTable";
 import { AdminRuleFormDialog } from "@/components/AdminRuleFormDialog";
+import { AdminPresetsManager } from "@/components/AdminPresetsManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff } from "lucide-react";
@@ -103,6 +104,11 @@ const Admin = () => {
               </>
             )}
           </div>
+        </div>
+
+        {/* Presets Manager - always visible */}
+        <div className="mt-8">
+          <AdminPresetsManager />
         </div>
       </main>
     </div>

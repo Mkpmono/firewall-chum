@@ -92,6 +92,89 @@ export type Database = {
         }
         Relationships: []
       }
+      preset_template_rules: {
+        Row: {
+          action: string
+          created_at: string
+          direction: string
+          id: string
+          label: string
+          notes: string | null
+          port: number | null
+          port_range: string | null
+          preset_id: string
+          priority: number
+          protocol: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          label: string
+          notes?: string | null
+          port?: number | null
+          port_range?: string | null
+          preset_id: string
+          priority?: number
+          protocol?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          port?: number | null
+          port_range?: string | null
+          preset_id?: string
+          priority?: number
+          protocol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preset_template_rules_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "preset_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preset_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_premium: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

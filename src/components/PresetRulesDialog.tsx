@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMyIps, useMyProfile } from "@/hooks/useAdmin";
+import { useAllPresetTemplatesWithRules } from "@/hooks/usePresetTemplates";
 import {
   Select,
   SelectContent,
@@ -314,12 +315,38 @@ interface PresetRulesDialogProps {
 export function PresetRulesDialog({ open, onClose, onApply, loading, currentRuleCount = 0, maxRules = 20 }: PresetRulesDialogProps) {
   const { data: myIps } = useMyIps();
   const { data: myProfile } = useMyProfile();
+  const { data: dbPresets } = useAllPresetTemplatesWithRules();
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedIp, setSelectedIp] = useState<string>("");
 
   const hasPremiumDdos = (myProfile as any)?.ddos_protection === true;
   const hasIps = myIps && myIps.length > 0;
-  const preset = PRESETS.find((p) => p.id === selectedPreset);
+
+  // Merge hardcoded + DB presets
+  const allPresets: Preset[] = useMemo(() => {
+    const dbConverted: Preset[] = (dbPresets || []).map((p) => ({
+      id: `db-${p.id}`,
+      name: p.name,
+      description: p.description || "",
+      icon: p.is_premium ? <ShieldCheck className="h-5 w-5" /> : <Shield className="h-5 w-5" />,
+      category: p.category,
+      isPremium: p.is_premium,
+      rules: p.rules.map((r) => ({
+        label: r.label,
+        port: r.port,
+        port_range: r.port_range,
+        protocol: r.protocol,
+        direction: r.direction,
+        action: r.action,
+        priority: r.priority,
+        notes: r.notes || "",
+      })),
+    }));
+    return [...PRESETS, ...dbConverted];
+  }, [dbPresets]);
+
+  const allCategories = [...new Set(allPresets.map(p => p.category))];
+  const preset = allPresets.find((p) => p.id === selectedPreset);
   const remainingSlots = maxRules - currentRuleCount;
   const wouldExceed = preset ? preset.rules.length > remainingSlots : false;
 
@@ -352,11 +379,11 @@ export function PresetRulesDialog({ open, onClose, onApply, loading, currentRule
                 {currentRuleCount}/{maxRules} reguli folosite
               </Badge>
             </div>
-            {CATEGORIES.map(cat => (
+            {allCategories.map(cat => (
               <div key={cat}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  {PRESETS.filter(p => p.category === cat).map((p) => {
+                  {allPresets.filter(p => p.category === cat).map((p) => {
                     const tooMany = p.rules.length > remainingSlots;
                     const lockedPremium = p.isPremium && !hasPremiumDdos;
                     const disabled = tooMany || lockedPremium;
