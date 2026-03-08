@@ -123,10 +123,13 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
 
+  const [sinkholeIp, setSinkholeIp] = useState("192.0.2.1");
+
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
     setEmail(profile?.email || "");
     setMaxRulesVal(profile?.max_rules ?? 20);
+    setSinkholeIp(profile?.sinkhole_ip || "192.0.2.1");
     setEditing(true);
   };
 
