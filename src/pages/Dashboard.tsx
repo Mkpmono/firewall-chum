@@ -8,7 +8,7 @@ import { RuleFormDialog } from "@/components/RuleFormDialog";
 import { PresetRulesDialog } from "@/components/PresetRulesDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle } from "lucide-react";
+import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
