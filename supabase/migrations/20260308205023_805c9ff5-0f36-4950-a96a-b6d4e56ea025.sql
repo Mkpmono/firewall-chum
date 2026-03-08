@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN ddos_protection boolean NOT NULL DEFAULT false;
