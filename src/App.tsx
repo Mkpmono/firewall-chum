@@ -8,6 +8,7 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import SelfHostSetup from "./pages/SelfHostSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
