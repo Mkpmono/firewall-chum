@@ -76,9 +76,9 @@ function generateStandardIptables(targetIp: string): string[] {
   ];
 }
 
-function generatePremiumIptables(targetIp: string): string[] {
+function generatePremiumIptables(targetIp: string, sinkholeIp?: string): string[] {
   const t = targetIp;
-  const s = SINKHOLE_IP;
+  const s = sinkholeIp || DEFAULT_SINKHOLE_IP;
   return [
     `# ╔══════════════════════════════════════════════════════════════╗`,
     `# ║  PREMIUM DDoS Smart Protection for ${t}`,
