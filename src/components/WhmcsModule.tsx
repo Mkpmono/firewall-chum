@@ -265,7 +265,7 @@ function hoxta_ChangePackage(array \$params) {
  * CLIENT AREA OUTPUT — Shows "Manage Firewall" link in client area
  */
 function hoxta_ClientArea(array \$params) {
-    \$panelUrl = '${hoxtaUrl ? hoxtaUrl.replace(/\\/functions.*/, "").replace(/https:\\/\\/[^/]+\\.supabase\\.co/, hoxtaUrl) : "https://YOUR_HOXTA_PANEL_URL"}';
+    \$panelUrl = '${hoxtaUrl || "https://YOUR_HOXTA_PANEL_URL"}';
 
     return '<div style="text-align:center;padding:20px;">
         <p style="margin-bottom:15px;color:#666;">Gestionează regulile de firewall și protecția DDoS din panoul Hoxta.</p>
