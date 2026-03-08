@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser, useAdminProfiles } from "@/hooks/useAdmin";
+import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser, useAdminProfiles, useAdminRules } from "@/hooks/useAdmin";
 import { RulesTable } from "@/components/RulesTable";
+import { AdminRuleFormDialog } from "@/components/AdminRuleFormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X } from "lucide-react";
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import type { Tables } from "@/integrations/supabase/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+type FirewallRule = Tables<"firewall_rules">;
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -93,7 +97,7 @@ const Admin = () => {
               </div>
             ) : (
               <>
-                <ClientProfileSection userId={selectedUserId} profile={selectedProfile} />
+                <ClientProfileSection userId={selectedUserId} profile={selectedProfile} onDeleted={() => setSelectedUserId(null)} />
                 <ClientIpsSection userId={selectedUserId} />
                 <ClientRulesSection userId={selectedUserId} />
               </>
@@ -105,7 +109,7 @@ const Admin = () => {
   );
 };
 
-function ClientProfileSection({ userId, profile }: { userId: string; profile: any }) {
+function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; profile: any; onDeleted: () => void }) {
   const { updateProfile, deleteProfile } = useAdminProfiles();
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -136,6 +140,7 @@ function ClientProfileSection({ userId, profile }: { userId: string; profile: an
     try {
       await deleteProfile.mutateAsync(userId);
       toast({ title: "Profil șters!" });
+      onDeleted();
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
     }
@@ -147,63 +152,45 @@ function ClientProfileSection({ userId, profile }: { userId: string; profile: an
         <div className="space-y-3">
           <div>
             <label className="text-xs text-muted-foreground">Nume</label>
-            <Input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl"
-            />
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Email</label>
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl"
-            />
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
-              <Save className="h-3.5 w-3.5 mr-1" />
-              Salvează
+              <Save className="h-3.5 w-3.5 mr-1" /> Salvează
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="rounded-xl">
-              <X className="h-3.5 w-3.5 mr-1" />
-              Anulare
+              <X className="h-3.5 w-3.5 mr-1" /> Anulare
             </Button>
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-foreground">
-              {profile?.display_name || "—"}
-            </h3>
+            <h3 className="font-semibold text-foreground">{profile?.display_name || "—"}</h3>
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
-              <Pencil className="h-3.5 w-3.5 mr-1" />
-              Editează
+              <Pencil className="h-3.5 w-3.5 mr-1" /> Editează
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="outline" className="rounded-xl text-destructive hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  Șterge
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Șterge
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="glass border-border/50 rounded-2xl">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Profilul va fi șters permanent. Regulile și IP-urile asociate vor rămâne.
-                  </AlertDialogDescription>
+                  <AlertDialogDescription>Profilul va fi șters permanent.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="rounded-xl">Anulare</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Șterge
-                  </AlertDialogAction>
+                  <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">Șterge</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -253,24 +240,13 @@ function ClientIpsSection({ userId }: { userId: string }) {
       <div className="p-4 border-b border-border/30 bg-muted/20">
         <div className="flex gap-2">
           <div className="flex-1">
-            <Input
-              value={newIp}
-              onChange={(e) => setNewIp(e.target.value)}
-              placeholder="ex: 192.168.1.100"
-              className="bg-muted/50 border-border/50 text-sm rounded-xl"
-            />
+            <Input value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="ex: 192.168.1.100" className="bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
           <div className="flex-1">
-            <Input
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="Etichetă (opțional)"
-              className="bg-muted/50 border-border/50 text-sm rounded-xl"
-            />
+            <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Etichetă (opțional)" className="bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
           <Button size="sm" onClick={handleAdd} disabled={addIp.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Adaugă
+            <Plus className="h-3.5 w-3.5 mr-1" /> Adaugă
           </Button>
         </div>
       </div>
@@ -309,6 +285,52 @@ function ClientIpsSection({ userId }: { userId: string }) {
 
 function ClientRulesSection({ userId }: { userId: string }) {
   const { data: rules, isLoading } = useAllRulesForUser(userId);
+  const { addRule, updateRule, deleteRule, toggleRule } = useAdminRules();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
+  const { toast } = useToast();
+
+  const handleAdd = () => {
+    setEditingRule(null);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (rule: FirewallRule) => {
+    setEditingRule(rule);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (data: any) => {
+    try {
+      if (editingRule) {
+        await updateRule.mutateAsync({ id: editingRule.id, ...data });
+        toast({ title: "Regulă actualizată!" });
+      } else {
+        await addRule.mutateAsync({ user_id: userId, ...data });
+        toast({ title: "Regulă adăugată!" });
+      }
+      setDialogOpen(false);
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRule.mutateAsync(id);
+      toast({ title: "Regulă ștearsă!" });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggle = async (id: string, enabled: boolean) => {
+    try {
+      await toggleRule.mutateAsync({ id, enabled });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="glass rounded-2xl overflow-hidden">
@@ -316,18 +338,29 @@ function ClientRulesSection({ userId }: { userId: string }) {
         <Shield className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-sm text-foreground">Reguli Firewall</h3>
         <Badge variant="secondary" className="ml-auto text-xs">{rules?.length || 0}</Badge>
+        <Button size="sm" onClick={handleAdd} className="rounded-xl gradient-btn text-primary-foreground border-0 ml-2">
+          <Plus className="h-3.5 w-3.5 mr-1" /> Adaugă
+        </Button>
       </div>
       {isLoading ? (
         <div className="p-8 text-center text-muted-foreground animate-pulse-glow">Se încarcă...</div>
       ) : (
         <RulesTable
           rules={rules || []}
-          onEdit={() => {}}
-          onDelete={() => {}}
-          onToggle={() => {}}
-          readOnly
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggle={handleToggle}
         />
       )}
+
+      <AdminRuleFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSubmit={handleSubmit}
+        editRule={editingRule}
+        loading={addRule.isPending || updateRule.isPending}
+        userId={userId}
+      />
     </div>
   );
 }
