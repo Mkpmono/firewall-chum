@@ -223,6 +223,11 @@ const Dashboard = () => {
           <GeoIpManager />
         </div>
 
+        {/* User-Agent Blocking */}
+        <div className="mb-8">
+          <UserAgentManager />
+        </div>
+
         {/* DDoS Monitoring */}
         <div className="mb-8">
           <DdosMonitoring />
