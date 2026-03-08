@@ -99,6 +99,23 @@ export function useMyIps() {
   });
 }
 
+export function useMyProfile() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useAdminClientIps() {
   const queryClient = useQueryClient();
 
