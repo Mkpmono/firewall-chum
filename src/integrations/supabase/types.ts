@@ -355,6 +355,39 @@ export type Database = {
         }
         Relationships: []
       }
+      useragent_rules: {
+        Row: {
+          block_type: string
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string | null
+          notes: string | null
+          pattern: string
+          user_id: string
+        }
+        Insert: {
+          block_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          notes?: string | null
+          pattern: string
+          user_id: string
+        }
+        Update: {
+          block_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          notes?: string | null
+          pattern?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
