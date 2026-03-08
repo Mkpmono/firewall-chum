@@ -62,7 +62,7 @@ const Dashboard = () => {
     if (atLimit) {
       toast({
         title: "Limită atinsă",
-        description: `Ai deja ${MAX_RULES} reguli. Contactează administratorul pentru a crește limita.`,
+        description: `Ai deja ${maxRules} reguli. Contactează administratorul pentru a crește limita.`,
         variant: "destructive",
       });
       return;
