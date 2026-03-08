@@ -174,17 +174,23 @@ const Dashboard = () => {
               {totalCount}<span className="text-lg text-muted-foreground">/{maxRules}</span>
             </p>
           </div>
-          <div className={`glass rounded-2xl p-5 ${hasDdos ? "border border-primary/30" : ""}`}>
+          <div className={`glass rounded-2xl p-5 ${hasDdos ? "border border-primary/30" : "border border-border/30"}`}>
             <p className="text-xs text-muted-foreground mb-1">DDoS Protection</p>
             {hasDdos ? (
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-primary" />
-                <span className="text-lg font-bold text-primary">ACTIV</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
+                  <span className="text-lg font-bold text-primary">PREMIUM</span>
+                </div>
+                <p className="text-xs text-primary/70 mt-0.5">16+ reguli avansate active</p>
               </div>
             ) : (
               <div>
-                <p className="text-lg font-bold text-muted-foreground">INACTIV</p>
-                <p className="text-xs text-muted-foreground">Premium — contactează admin</p>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-lg font-bold text-foreground">STANDARD</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">Upgrade la Premium — contactează admin</p>
               </div>
             )}
           </div>

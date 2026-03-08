@@ -6,97 +6,110 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-api-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Premium DDoS protection rules - comprehensive anti-DDoS iptables ruleset
-const DDOS_PROTECTION_RULES = [
-  // SYN flood protection
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] SYN Flood Protection", notes: "iptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT", priority: 1 },
-  // ICMP flood / ping of death
-  { direction: "INPUT", protocol: "icmp", action: "DROP", label: "[DDoS] ICMP Flood Limit", notes: "iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT", priority: 2 },
-  // UDP flood protection
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS] UDP Flood Protection", notes: "iptables -A INPUT -p udp -m limit --limit 10/s --limit-burst 20 -j ACCEPT", priority: 3 },
-  // Invalid packets
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS] Drop Invalid Packets", notes: "iptables -A INPUT -m state --state INVALID -j DROP", priority: 4 },
-  // XMAS packets
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] Block XMAS Packets", notes: "iptables -A INPUT -p tcp --tcp-flags ALL ALL -j DROP", priority: 5 },
-  // NULL packets
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] Block NULL Packets", notes: "iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP", priority: 6 },
-  // Fragmented packets
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS] Block Fragmented Packets", notes: "iptables -A INPUT -f -j DROP", priority: 7 },
-  // Connection limit per IP
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] Conn Limit /IP (80)", notes: "iptables -A INPUT -p tcp --dport 80 -m connlimit --connlimit-above 50 -j DROP", priority: 8 },
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] Conn Limit /IP (443)", notes: "iptables -A INPUT -p tcp --dport 443 -m connlimit --connlimit-above 50 -j DROP", priority: 9 },
-  // RST flood
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] RST Flood Protection", notes: "iptables -A INPUT -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT", priority: 10 },
-  // Slowloris protection
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] Slowloris Protection", notes: "iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 11 },
-  // DNS amplification
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS] DNS Amplification Block", notes: "iptables -A INPUT -p udp --sport 53 -m length --length 512:65535 -j DROP", priority: 12, port: 53 },
-  // NTP amplification
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS] NTP Amplification Block", notes: "iptables -A INPUT -p udp --sport 123 -m length --length 48:65535 -j DROP", priority: 13, port: 123 },
-  // SSDP amplification
-  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS] SSDP Amplification Block", notes: "iptables -A INPUT -p udp --dport 1900 -j DROP", priority: 14, port: 1900 },
-  // Rate limit new connections
-  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS] New Conn Rate Limit", notes: "iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 15 },
-  // Drop bogon/spoofed
-  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS] Block Bogon Networks", notes: "iptables -A INPUT -s 0.0.0.0/8 -j DROP; iptables -A INPUT -s 127.0.0.0/8 -j DROP; iptables -A INPUT -s 224.0.0.0/4 -j DROP", priority: 16 },
+// ============ STANDARD DDoS Protection (toți clienții) ============
+const DDOS_STANDARD_RULES = [
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Std] Drop Invalid Packets", notes: "-m state --state INVALID -j DROP", priority: 1 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Std] Block XMAS Packets", notes: "--tcp-flags ALL ALL -j DROP", priority: 2 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Std] Block NULL Packets", notes: "--tcp-flags ALL NONE -j DROP", priority: 3 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Std] SYN Limit", notes: "--syn -m limit --limit 5/s --limit-burst 10 -j ACCEPT", priority: 4 },
+  { direction: "INPUT", protocol: "icmp", action: "DROP", label: "[DDoS-Std] ICMP Limit", notes: "--icmp-type echo-request -m limit --limit 2/s --limit-burst 5 -j ACCEPT", priority: 5 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Std] Block Bogons", notes: "-s 0.0.0.0/8 -j DROP; -s 224.0.0.0/4 -j DROP", priority: 6 },
 ];
 
-function generateDdosIptables(targetIp: string): string[] {
-  const lines: string[] = [
-    `# === DDoS Full Protection for ${targetIp} ===`,
-    "",
-    "# Drop invalid packets",
+// ============ PREMIUM DDoS Protection (activare admin) ============
+const DDOS_PREMIUM_RULES = [
+  // Toate regulile standard, plus:
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Drop Invalid Packets", notes: "-m state --state INVALID -j DROP", priority: 1 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block XMAS Packets", notes: "--tcp-flags ALL ALL -j DROP", priority: 2 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Block NULL Packets", notes: "--tcp-flags ALL NONE -j DROP", priority: 3 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Fragmented", notes: "-f -j DROP", priority: 4 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] SYN Flood Protect", notes: "--syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT", priority: 5 },
+  { direction: "INPUT", protocol: "icmp", action: "DROP", label: "[DDoS-Pro] ICMP Flood Limit", notes: "--icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT", priority: 6 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] UDP Flood Protect", notes: "-m limit --limit 10/s --limit-burst 20 -j ACCEPT", priority: 7 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] RST Flood Protect", notes: "--tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT", priority: 8 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn Limit HTTP", notes: "--dport 80 -m connlimit --connlimit-above 50 -j DROP", priority: 9, port: 80 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Conn Limit HTTPS", notes: "--dport 443 -m connlimit --connlimit-above 50 -j DROP", priority: 10, port: 443 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] Slowloris Protect", notes: "--dport 80 -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 11 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] DNS Amplification", notes: "--sport 53 -m length --length 512:65535 -j DROP", priority: 12, port: 53 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] NTP Amplification", notes: "--sport 123 -m length --length 48:65535 -j DROP", priority: 13, port: 123 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SSDP Block", notes: "--dport 1900 -j DROP", priority: 14, port: 1900 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] Chargen Block", notes: "--dport 19 -j DROP", priority: 15, port: 19 },
+  { direction: "INPUT", protocol: "udp", action: "DROP", label: "[DDoS-Pro] SNMP Amplification", notes: "--sport 161 -m length --length 200:65535 -j DROP", priority: 16, port: 161 },
+  { direction: "INPUT", protocol: "tcp", action: "DROP", label: "[DDoS-Pro] New Conn Rate Limit", notes: "-m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT", priority: 17 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 0/8", notes: "-s 0.0.0.0/8 -j DROP", priority: 18 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Bogon 127/8", notes: "-s 127.0.0.0/8 -j DROP", priority: 19 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Multicast", notes: "-s 224.0.0.0/4 -j DROP", priority: 20 },
+  { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Reserved", notes: "-s 240.0.0.0/4 -j DROP", priority: 21 },
+];
+
+function generateStandardIptables(targetIp: string): string[] {
+  return [
+    `# --- Standard DDoS Protection for ${targetIp} ---`,
     `iptables -A INPUT -d ${targetIp} -m state --state INVALID -j DROP`,
-    "",
-    "# Drop XMAS packets",
     `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL ALL -j DROP`,
-    "",
-    "# Drop NULL packets",
     `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL NONE -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p tcp --syn -m limit --limit 5/s --limit-burst 10 -j ACCEPT`,
+    `iptables -A INPUT -d ${targetIp} -p tcp --syn -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -m limit --limit 2/s --limit-burst 5 -j ACCEPT`,
+    `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -s 0.0.0.0/8 -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -s 224.0.0.0/4 -j DROP`,
+    `# --- End Standard DDoS for ${targetIp} ---`,
     "",
-    "# Drop fragmented packets",
+  ];
+}
+
+function generatePremiumIptables(targetIp: string): string[] {
+  return [
+    `# === PREMIUM DDoS Full Protection for ${targetIp} ===`,
+    "",
+    "# Invalid/malformed packets",
+    `iptables -A INPUT -d ${targetIp} -m state --state INVALID -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL ALL -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags ALL NONE -j DROP`,
     `iptables -A INPUT -d ${targetIp} -f -j DROP`,
     "",
-    "# SYN flood protection",
+    "# SYN flood (agresiv)",
     `iptables -A INPUT -d ${targetIp} -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT`,
     `iptables -A INPUT -d ${targetIp} -p tcp --syn -j DROP`,
     "",
-    "# ICMP rate limit",
+    "# ICMP flood",
     `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT`,
     `iptables -A INPUT -d ${targetIp} -p icmp --icmp-type echo-request -j DROP`,
     "",
-    "# UDP flood protection",
+    "# UDP flood",
     `iptables -A INPUT -d ${targetIp} -p udp -m limit --limit 10/s --limit-burst 20 -j ACCEPT`,
     "",
-    "# RST flood protection",
+    "# RST flood",
     `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT`,
     `iptables -A INPUT -d ${targetIp} -p tcp --tcp-flags RST RST -j DROP`,
     "",
-    "# Connection limit per source IP (HTTP/HTTPS)",
+    "# Connection limits HTTP/HTTPS",
     `iptables -A INPUT -d ${targetIp} -p tcp --dport 80 -m connlimit --connlimit-above 50 -j DROP`,
     `iptables -A INPUT -d ${targetIp} -p tcp --dport 443 -m connlimit --connlimit-above 50 -j DROP`,
     "",
-    "# Rate limit new connections",
+    "# Slowloris",
+    `iptables -A INPUT -d ${targetIp} -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT`,
+    "",
+    "# New connection rate limit",
     `iptables -A INPUT -d ${targetIp} -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT`,
     "",
-    "# DNS amplification protection",
+    "# Amplification attacks",
     `iptables -A INPUT -d ${targetIp} -p udp --sport 53 -m length --length 512:65535 -j DROP`,
-    "",
-    "# NTP amplification protection",
     `iptables -A INPUT -d ${targetIp} -p udp --sport 123 -m length --length 48:65535 -j DROP`,
-    "",
-    "# SSDP amplification protection",
     `iptables -A INPUT -d ${targetIp} -p udp --dport 1900 -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p udp --dport 19 -j DROP`,
+    `iptables -A INPUT -d ${targetIp} -p udp --sport 161 -m length --length 200:65535 -j DROP`,
     "",
-    "# Block bogon/spoofed sources",
+    "# Bogon/spoofed sources",
     `iptables -A INPUT -d ${targetIp} -s 0.0.0.0/8 -j DROP`,
     `iptables -A INPUT -d ${targetIp} -s 127.0.0.0/8 -j DROP`,
     `iptables -A INPUT -d ${targetIp} -s 224.0.0.0/4 -j DROP`,
     `iptables -A INPUT -d ${targetIp} -s 240.0.0.0/4 -j DROP`,
     "",
-    `# === End DDoS Protection for ${targetIp} ===`,
+    `# === End PREMIUM DDoS for ${targetIp} ===`,
+    "",
   ];
-  return lines;
 }
 
 Deno.serve(async (req) => {
@@ -140,9 +153,10 @@ Deno.serve(async (req) => {
     const { data: rules, error } = await query;
     if (error) throw error;
 
-    // Check DDoS protection status for relevant users
-    let ddosUsers: Record<string, boolean> = {};
-    let ddosIps: { user_id: string; ip_address: string }[] = [];
+    // Fetch profiles and IPs for DDoS tiers
+    interface IpEntry { user_id: string; ip_address: string }
+    let premiumIps: IpEntry[] = [];
+    let standardIps: IpEntry[] = [];
 
     if (userId) {
       const { data: profile } = await supabase
@@ -150,29 +164,34 @@ Deno.serve(async (req) => {
         .select("user_id, ddos_protection")
         .eq("user_id", userId)
         .maybeSingle();
+      const { data: ips } = await supabase
+        .from("client_ips")
+        .select("user_id, ip_address")
+        .eq("user_id", userId);
+      const userIps = ips || [];
       if (profile?.ddos_protection) {
-        ddosUsers[userId] = true;
-        const { data: ips } = await supabase
-          .from("client_ips")
-          .select("user_id, ip_address")
-          .eq("user_id", userId);
-        ddosIps = ips || [];
+        premiumIps = userIps;
+      } else {
+        standardIps = userIps;
       }
     } else {
+      // All users
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, ddos_protection")
-        .eq("ddos_protection", true);
-      if (profiles && profiles.length > 0) {
-        for (const p of profiles) {
-          ddosUsers[p.user_id] = true;
+        .select("user_id, ddos_protection");
+      const premiumUserIds = (profiles || []).filter((p) => p.ddos_protection).map((p) => p.user_id);
+      const standardUserIds = (profiles || []).filter((p) => !p.ddos_protection).map((p) => p.user_id);
+
+      const { data: allIps } = await supabase
+        .from("client_ips")
+        .select("user_id, ip_address");
+
+      for (const ip of allIps || []) {
+        if (premiumUserIds.includes(ip.user_id)) {
+          premiumIps.push(ip);
+        } else if (standardUserIds.includes(ip.user_id)) {
+          standardIps.push(ip);
         }
-        const userIds = profiles.map((p) => p.user_id);
-        const { data: ips } = await supabase
-          .from("client_ips")
-          .select("user_id, ip_address")
-          .in("user_id", userIds);
-        ddosIps = ips || [];
       }
     }
 
@@ -181,8 +200,9 @@ Deno.serve(async (req) => {
         "#!/bin/bash",
         "# Generated by Hoxta Firewall Manager",
         `# Date: ${new Date().toISOString()}`,
-        `# Rules: ${rules.length}`,
-        `# DDoS Protected Users: ${Object.keys(ddosUsers).length}`,
+        `# User Rules: ${rules.length}`,
+        `# Standard DDoS IPs: ${standardIps.length}`,
+        `# Premium DDoS IPs: ${premiumIps.length}`,
         "",
         "*filter",
         ":INPUT ACCEPT [0:0]",
@@ -191,18 +211,27 @@ Deno.serve(async (req) => {
         "",
       ];
 
-      // DDoS protection rules first (highest priority)
-      if (ddosIps.length > 0) {
+      // Premium DDoS first (highest priority, fullest protection)
+      if (premiumIps.length > 0) {
         lines.push("# ========== PREMIUM DDOS PROTECTION ==========");
-        for (const ipEntry of ddosIps) {
-          lines.push(...generateDdosIptables(ipEntry.ip_address));
-          lines.push("");
+        for (const ip of premiumIps) {
+          lines.push(...generatePremiumIptables(ip.ip_address));
         }
-        lines.push("# ========== END DDOS PROTECTION ==========");
+        lines.push("# ========== END PREMIUM DDOS ==========");
         lines.push("");
       }
 
-      // Regular rules
+      // Standard DDoS for non-premium users
+      if (standardIps.length > 0) {
+        lines.push("# ========== STANDARD DDOS PROTECTION ==========");
+        for (const ip of standardIps) {
+          lines.push(...generateStandardIptables(ip.ip_address));
+        }
+        lines.push("# ========== END STANDARD DDOS ==========");
+        lines.push("");
+      }
+
+      // Regular user rules
       lines.push("# ========== USER FIREWALL RULES ==========");
       for (const rule of rules) {
         let line = `iptables -A ${rule.direction}`;
@@ -233,22 +262,34 @@ Deno.serve(async (req) => {
     }
 
     // JSON format
-    const ddosRulesForJson = ddosIps.flatMap((ipEntry) =>
-      DDOS_PROTECTION_RULES.map((r) => ({
+    const standardDdosJson = standardIps.flatMap((ip) =>
+      DDOS_STANDARD_RULES.map((r) => ({
         ...r,
-        destination_ip: ipEntry.ip_address,
+        destination_ip: ip.ip_address,
         source_ip: "0.0.0.0/0",
-        user_id: ipEntry.user_id,
-        is_ddos_protection: true,
+        user_id: ip.user_id,
+        tier: "standard",
+      }))
+    );
+
+    const premiumDdosJson = premiumIps.flatMap((ip) =>
+      DDOS_PREMIUM_RULES.map((r) => ({
+        ...r,
+        destination_ip: ip.ip_address,
+        source_ip: "0.0.0.0/0",
+        user_id: ip.user_id,
+        tier: "premium",
       }))
     );
 
     return new Response(
       JSON.stringify({
         count: rules.length,
-        ddos_protection_rules: ddosRulesForJson.length,
+        ddos_standard_rules: standardDdosJson.length,
+        ddos_premium_rules: premiumDdosJson.length,
         generated_at: new Date().toISOString(),
-        ddos_rules: ddosRulesForJson,
+        ddos_standard: standardDdosJson,
+        ddos_premium: premiumDdosJson,
         rules: rules.map((r) => ({
           id: r.id,
           direction: r.direction,
