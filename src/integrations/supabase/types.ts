@@ -259,6 +259,51 @@ export type Database = {
         }
         Relationships: []
       }
+      servers: {
+        Row: {
+          api_key: string
+          created_at: string
+          hostname: string
+          id: string
+          label: string | null
+          last_sync_at: string | null
+          last_sync_status: string | null
+          os_info: string | null
+          panel_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key?: string
+          created_at?: string
+          hostname: string
+          id?: string
+          label?: string | null
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          os_info?: string | null
+          panel_type?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          hostname?: string
+          id?: string
+          label?: string | null
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          os_info?: string | null
+          panel_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
