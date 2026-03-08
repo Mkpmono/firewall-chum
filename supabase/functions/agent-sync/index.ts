@@ -140,6 +140,7 @@ Deno.serve(async (req) => {
       `# ║  Generated: ${new Date().toISOString()}`,
       `# ║  IPs: ${userIps.join(", ") || "none"}`,
       `# ║  DDoS: ${hasPremiumDdos ? "PREMIUM" : "STANDARD"}`,
+      `# ║  GeoIP: ${(geoRules || []).length} rules`,
       "# ╚══════════════════════════════════════════════════════════════╝",
       "",
       "set -e",
