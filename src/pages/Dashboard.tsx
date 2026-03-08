@@ -8,6 +8,7 @@ import { RuleFormDialog } from "@/components/RuleFormDialog";
 import { PresetRulesDialog } from "@/components/PresetRulesDialog";
 import { DdosMonitoring } from "@/components/DdosMonitoring";
 import { GeoIpManager } from "@/components/GeoIpManager";
+import { UserAgentManager } from "@/components/UserAgentManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
