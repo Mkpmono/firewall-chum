@@ -388,8 +388,10 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
         ddos_protection: !isActive,
       });
       toast({
-        title: !isActive ? "🛡️ Protecție DDoS activată!" : "Protecție DDoS dezactivată",
-        description: !isActive ? "Regulile premium anti-DDoS au fost activate pentru acest client." : undefined,
+        title: !isActive ? "🛡️ DDoS Premium activat!" : "DDoS Premium dezactivat",
+        description: !isActive 
+          ? "21 reguli avansate anti-DDoS activate. Clientul trece de la Standard la Premium." 
+          : "Clientul revine la protecția DDoS Standard (6 reguli de bază).",
       });
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -407,7 +409,7 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
       }`}
     >
       {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {isActive ? "DDoS Protection ON" : "DDoS Protection OFF"}
+      {isActive ? "DDoS PREMIUM" : "DDoS STANDARD"}
     </button>
   );
 }
