@@ -105,6 +105,11 @@ const Admin = () => {
             )}
           </div>
         </div>
+
+        {/* Presets Manager - always visible */}
+        <div className="mt-8">
+          <AdminPresetsManager />
+        </div>
       </main>
     </div>
   );
