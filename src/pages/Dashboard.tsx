@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useAdmin";
+import { useIsAdmin, useMyProfile } from "@/hooks/useAdmin";
 import { useFirewallRules } from "@/hooks/useFirewallRules";
 import { RulesTable } from "@/components/RulesTable";
 import { RuleFormDialog } from "@/components/RuleFormDialog";
@@ -14,11 +14,10 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type FirewallRule = Tables<"firewall_rules">;
 
-const MAX_RULES = 20;
-
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { data: myProfile } = useMyProfile();
   const navigate = useNavigate();
   const { data: rules, isLoading, refetch, addRule, updateRule, deleteRule, toggleRule } = useFirewallRules();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -27,15 +26,16 @@ const Dashboard = () => {
   const [editingRule, setEditingRule] = useState<FirewallRule | null>(null);
   const { toast } = useToast();
 
+  const maxRules = (myProfile as any)?.max_rules ?? 20;
   const totalCount = rules?.length || 0;
   const activeCount = rules?.filter((r) => r.enabled).length || 0;
-  const atLimit = totalCount >= MAX_RULES;
+  const atLimit = totalCount >= maxRules;
 
   const handleApplyPreset = async (presetRules: any[], selectedIp: string) => {
-    if (totalCount + presetRules.length > MAX_RULES) {
+    if (totalCount + presetRules.length > maxRules) {
       toast({
         title: "Limită depășită",
-        description: `Ai ${totalCount}/${MAX_RULES} reguli. Contactează administratorul pentru mai multe.`,
+        description: `Ai ${totalCount}/${maxRules} reguli. Contactează administratorul pentru mai multe.`,
         variant: "destructive",
       });
       return;
@@ -62,7 +62,7 @@ const Dashboard = () => {
     if (atLimit) {
       toast({
         title: "Limită atinsă",
-        description: `Ai deja ${MAX_RULES} reguli. Contactează administratorul pentru a crește limita.`,
+        description: `Ai deja ${maxRules} reguli. Contactează administratorul pentru a crește limita.`,
         variant: "destructive",
       });
       return;
@@ -82,7 +82,7 @@ const Dashboard = () => {
         await updateRule.mutateAsync({ id: editingRule.id, ...data });
         toast({ title: "Regulă actualizată!" });
       } else {
-        if (totalCount >= MAX_RULES) {
+        if (totalCount >= maxRules) {
           toast({ title: "Limită atinsă", description: "Contactează administratorul.", variant: "destructive" });
           return;
         }
@@ -147,7 +147,7 @@ const Dashboard = () => {
           <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             <div>
-              <p className="text-sm font-medium text-destructive">Limită de reguli atinsă ({MAX_RULES}/{MAX_RULES})</p>
+              <p className="text-sm font-medium text-destructive">Limită de reguli atinsă ({maxRules}/{maxRules})</p>
               <p className="text-xs text-destructive/80">Contactează administratorul pentru a crește limita.</p>
             </div>
           </div>
@@ -170,7 +170,7 @@ const Dashboard = () => {
           <div className="glass rounded-2xl p-5">
             <p className="text-xs text-muted-foreground mb-1">Limită</p>
             <p className={`text-3xl font-bold ${atLimit ? "text-destructive" : "text-foreground"}`}>
-              {totalCount}<span className="text-lg text-muted-foreground">/{MAX_RULES}</span>
+              {totalCount}<span className="text-lg text-muted-foreground">/{maxRules}</span>
             </p>
           </div>
         </div>
@@ -225,7 +225,7 @@ const Dashboard = () => {
         onApply={handleApplyPreset}
         loading={presetLoading}
         currentRuleCount={totalCount}
-        maxRules={MAX_RULES}
+        maxRules={maxRules}
       />
     </div>
   );

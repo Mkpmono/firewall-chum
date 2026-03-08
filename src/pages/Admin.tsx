@@ -114,11 +114,13 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
 
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
     setEmail(profile?.email || "");
+    setMaxRulesVal(profile?.max_rules ?? 20);
     setEditing(true);
   };
 
@@ -128,6 +130,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
         user_id: userId,
         display_name: displayName.trim() || null,
         email: email.trim() || null,
+        max_rules: maxRulesVal,
       });
       toast({ title: "Profil actualizat!" });
       setEditing(false);
@@ -158,6 +161,10 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
             <label className="text-xs text-muted-foreground">Email</label>
             <Input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
           </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Limită Reguli</label>
+            <Input type="number" value={maxRulesVal} onChange={(e) => setMaxRulesVal(parseInt(e.target.value) || 0)} className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl w-32" />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="rounded-xl gradient-btn text-primary-foreground border-0">
               <Save className="h-3.5 w-3.5 mr-1" /> Salvează
@@ -172,6 +179,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
           <div>
             <h3 className="font-semibold text-foreground">{profile?.display_name || "—"}</h3>
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">

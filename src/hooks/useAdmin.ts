@@ -38,10 +38,12 @@ export function useAdminProfiles() {
   const queryClient = useQueryClient();
 
   const updateProfile = useMutation({
-    mutationFn: async ({ user_id, display_name, email }: { user_id: string; display_name: string | null; email: string | null }) => {
+    mutationFn: async ({ user_id, display_name, email, max_rules }: { user_id: string; display_name: string | null; email: string | null; max_rules?: number }) => {
+      const updates: any = { display_name, email };
+      if (max_rules !== undefined) updates.max_rules = max_rules;
       const { data, error } = await supabase
         .from("profiles")
-        .update({ display_name, email })
+        .update(updates)
         .eq("user_id", user_id)
         .select()
         .single();
@@ -93,6 +95,23 @@ export function useMyIps() {
         .select("*")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useMyProfile() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
