@@ -5,6 +5,7 @@ import { RulesTable } from "@/components/RulesTable";
 import { AdminRuleFormDialog } from "@/components/AdminRuleFormDialog";
 import { AdminPresetsManager } from "@/components/AdminPresetsManager";
 import { ClientServersSection } from "@/components/ClientServersSection";
+import { WhmcsModule } from "@/components/WhmcsModule";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff, HardDrive } from "lucide-react";
