@@ -147,7 +147,7 @@ const Dashboard = () => {
           <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             <div>
-              <p className="text-sm font-medium text-destructive">Limită de reguli atinsă ({MAX_RULES}/{MAX_RULES})</p>
+              <p className="text-sm font-medium text-destructive">Limită de reguli atinsă ({maxRules}/{maxRules})</p>
               <p className="text-xs text-destructive/80">Contactează administratorul pentru a crește limita.</p>
             </div>
           </div>
