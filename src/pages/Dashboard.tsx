@@ -216,6 +216,11 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* DDoS Monitoring */}
+        <div className="mb-8">
+          <DdosMonitoring />
+        </div>
+
         {/* Table */}
         <div className="glass rounded-2xl overflow-hidden">
           {isLoading ? (

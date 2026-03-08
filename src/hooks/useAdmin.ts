@@ -38,12 +38,13 @@ export function useAdminProfiles() {
   const queryClient = useQueryClient();
 
   const updateProfile = useMutation({
-    mutationFn: async ({ user_id, display_name, email, max_rules, ddos_protection }: { user_id: string; display_name?: string | null; email?: string | null; max_rules?: number; ddos_protection?: boolean }) => {
+    mutationFn: async ({ user_id, display_name, email, max_rules, ddos_protection, sinkhole_ip }: { user_id: string; display_name?: string | null; email?: string | null; max_rules?: number; ddos_protection?: boolean; sinkhole_ip?: string }) => {
       const updates: any = {};
       if (display_name !== undefined) updates.display_name = display_name;
       if (email !== undefined) updates.email = email;
       if (max_rules !== undefined) updates.max_rules = max_rules;
       if (ddos_protection !== undefined) updates.ddos_protection = ddos_protection;
+      if (sinkhole_ip !== undefined) updates.sinkhole_ip = sinkhole_ip;
       const { data, error } = await supabase
         .from("profiles")
         .update(updates)

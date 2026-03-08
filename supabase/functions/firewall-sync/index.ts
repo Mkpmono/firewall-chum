@@ -56,8 +56,8 @@ const DDOS_PREMIUM_RULES = [
   { direction: "INPUT", protocol: "all", action: "DROP", label: "[DDoS-Pro] Block Reserved", notes: "-s 240.0.0.0/4 -j DROP", priority: 26 },
 ];
 
-// Sinkhole IP - traffic redirected here during attacks (RFC 5737 TEST-NET-1)
-const SINKHOLE_IP = "192.0.2.1";
+// Default Sinkhole IP - can be overridden per client via profiles.sinkhole_ip
+const DEFAULT_SINKHOLE_IP = "192.0.2.1";
 
 function generateStandardIptables(targetIp: string): string[] {
   return [

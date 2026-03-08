@@ -195,6 +195,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
             <div className="flex items-center gap-4 mt-1">
               <p className="text-xs text-muted-foreground">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+              <p className="text-xs text-muted-foreground">Sinkhole: <code className="text-primary font-mono text-[11px]">{profile?.sinkhole_ip || "192.0.2.1"}</code></p>
               <DdosToggle userId={userId} profile={profile} />
             </div>
           </div>
