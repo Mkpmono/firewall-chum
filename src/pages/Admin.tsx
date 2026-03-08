@@ -179,6 +179,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
           <div>
             <h3 className="font-semibold text-foreground">{profile?.display_name || "—"}</h3>
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
