@@ -358,26 +358,38 @@ export function PresetRulesDialog({ open, onClose, onApply, loading, currentRule
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {PRESETS.filter(p => p.category === cat).map((p) => {
                     const tooMany = p.rules.length > remainingSlots;
+                    const lockedPremium = p.isPremium && !hasPremiumDdos;
+                    const disabled = tooMany || lockedPremium;
                     return (
                       <button
                         key={p.id}
-                        onClick={() => !tooMany && setSelectedPreset(p.id)}
-                        disabled={tooMany}
+                        onClick={() => !disabled && setSelectedPreset(p.id)}
+                        disabled={disabled}
                         className={`flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-muted/30 transition-all text-left group ${
-                          tooMany ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/60 hover:border-primary/40"
-                        }`}
+                          disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/60 hover:border-primary/40"
+                        } ${p.isPremium ? "border-primary/20" : ""}`}
                       >
-                        <div className="mt-0.5 text-primary group-hover:scale-110 transition-transform">
+                        <div className={`mt-0.5 ${p.isPremium ? "text-primary" : "text-primary"} group-hover:scale-110 transition-transform`}>
                           {p.icon}
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm text-foreground">{p.name}</p>
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{p.description}</p>
-                          <div className="flex gap-1.5 mt-2">
+                          <div className="flex gap-1.5 mt-2 flex-wrap">
                             <Badge variant="secondary" className="text-[10px]">
                               {p.rules.length} reguli
                             </Badge>
-                            {tooMany && (
+                            {p.isPremium && (
+                              <Badge className="text-[10px] bg-primary/15 text-primary border-primary/30">
+                                PREMIUM
+                              </Badge>
+                            )}
+                            {lockedPremium && (
+                              <Badge variant="destructive" className="text-[10px]">
+                                🔒 Necesită activare admin
+                              </Badge>
+                            )}
+                            {tooMany && !lockedPremium && (
                               <Badge variant="destructive" className="text-[10px]">
                                 Depășește limita
                               </Badge>
