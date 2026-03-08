@@ -175,11 +175,14 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="font-semibold text-foreground">{profile?.display_name || "—"}</h3>
             <p className="text-xs text-muted-foreground">{profile?.email}</p>
-            <p className="text-xs text-muted-foreground mt-1">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-xs text-muted-foreground">Limită reguli: <span className="text-primary font-medium">{profile?.max_rules ?? 20}</span></p>
+              <DdosToggle userId={userId} profile={profile} />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={startEdit} className="rounded-xl">
