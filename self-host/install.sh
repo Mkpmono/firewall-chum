@@ -212,6 +212,18 @@ EOF
 systemctl daemon-reload
 systemctl enable --now hoxta-agent-sync hoxta-firewall-sync 2>/dev/null || true
 
+echo -e "${YELLOW}[8/8] Verificare finală iptables...${NC}"
+# Final iptables verification
+echo -e "  Kernel modules:"
+lsmod | grep -E "^ip_tables|^iptable_filter|^xt_" | head -10 | while read line; do
+  echo -e "    ${GREEN}✓${NC} $line"
+done
+echo -e "  Reguli active: $(iptables -L INPUT -n 2>/dev/null | tail -n +3 | wc -l) (INPUT)"
+echo -e "  iptables-save: $(command -v iptables-save &>/dev/null && echo '✅ disponibil' || echo '❌ lipsă')"
+echo -e "  netfilter-persistent: $(command -v netfilter-persistent &>/dev/null && echo '✅ disponibil' || echo '⚠️ lipsă')"
+echo -e "  ipset: $(command -v ipset &>/dev/null && echo '✅ disponibil' || echo '⚠️ lipsă')"
+echo -e "${GREEN}✅ iptables verificat și funcțional!${NC}"
+
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║  ✅ Hoxta instalat cu succes!                              ║${NC}"

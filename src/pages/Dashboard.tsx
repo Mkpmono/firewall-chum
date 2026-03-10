@@ -229,6 +229,11 @@ const Dashboard = () => {
           <UserAgentManager />
         </div>
 
+        {/* IP Ban Manager */}
+        <div className="mb-8">
+          <IpBanManager />
+        </div>
+
         {/* DDoS Monitoring */}
         <div className="mb-8">
           <DdosMonitoring />
