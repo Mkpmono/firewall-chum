@@ -123,7 +123,7 @@ for f in supabase/migrations/*.sql; do
 done
 echo -e "${GREEN}✅ Migrări aplicate!${NC}"
 
-echo -e "${YELLOW}[5/7] Configurare Nginx...${NC}"
+echo -e "${YELLOW}[5/8] Configurare Nginx...${NC}"
 cat > /etc/nginx/sites-available/hoxta << NGINX
 server {
     listen 80;
