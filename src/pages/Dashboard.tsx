@@ -9,6 +9,7 @@ import { PresetRulesDialog } from "@/components/PresetRulesDialog";
 import { DdosMonitoring } from "@/components/DdosMonitoring";
 import { GeoIpManager } from "@/components/GeoIpManager";
 import { UserAgentManager } from "@/components/UserAgentManager";
+import IpBanManager from "@/components/IpBanManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, RefreshCw, Settings, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
@@ -226,6 +227,11 @@ const Dashboard = () => {
         {/* User-Agent Blocking */}
         <div className="mb-8">
           <UserAgentManager />
+        </div>
+
+        {/* IP Ban Manager */}
+        <div className="mb-8">
+          <IpBanManager />
         </div>
 
         {/* DDoS Monitoring */}

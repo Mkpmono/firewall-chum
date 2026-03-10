@@ -134,6 +134,13 @@ Deno.serve(async (req) => {
       .eq("user_id", server.user_id)
       .eq("enabled", true);
 
+    // Get user's IP bans
+    const { data: ipBans } = await supabase
+      .from("ip_bans")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("enabled", true);
+
     const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
     const hasPremiumDdos = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
@@ -161,6 +168,24 @@ Deno.serve(async (req) => {
       "iptables -A INPUT -p tcp --dport 22 -j ACCEPT",
       "",
     ];
+
+    // ── IP Bans (iptables DROP) ──
+    const activeBans = (ipBans || []).filter(b => {
+      if (!b.expires_at) return true;
+      return new Date(b.expires_at) > new Date();
+    });
+
+    if (activeBans.length > 0) {
+      lines.push("# ── IP Bans (Manual) ──");
+      for (const ban of activeBans) {
+        const comment = ban.reason ? ` # ${ban.reason}` : "";
+        lines.push(`iptables -A INPUT -s ${ban.ip_address} -j DROP${comment}`);
+        lines.push(`iptables -A FORWARD -s ${ban.ip_address} -j DROP${comment}`);
+      }
+      lines.push(`echo "[Hoxta] ${activeBans.length} IP ban(s) applied."`);
+      lines.push("");
+    }
+
 
     // DDoS protection per IP
     for (const ip of userIps) {

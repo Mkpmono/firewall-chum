@@ -32,13 +32,47 @@ read -sp "Parola dashboard Supabase: " DASH_PASS
 echo
 
 echo ""
-echo -e "${YELLOW}[1/7] Instalare dependințe...${NC}"
+echo -e "${YELLOW}[1/8] Instalare dependințe...${NC}"
 apt update -qq
-apt install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx git curl nodejs npm
+apt install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx git curl nodejs npm iptables iptables-persistent ipset
 
 systemctl enable docker && systemctl start docker
 
-echo -e "${YELLOW}[2/7] Instalare Supabase Self-Hosted...${NC}"
+echo -e "${YELLOW}[1.5/8] Verificare și configurare iptables...${NC}"
+# Verify iptables is working
+if command -v iptables &>/dev/null; then
+  echo -e "${GREEN}  ✅ iptables instalat: $(iptables --version)${NC}"
+else
+  echo -e "${RED}  ❌ iptables nu s-a instalat corect!${NC}"
+  exit 1
+fi
+
+# Verify ipset
+if command -v ipset &>/dev/null; then
+  echo -e "${GREEN}  ✅ ipset instalat: $(ipset --version | head -1)${NC}"
+else
+  echo -e "${YELLOW}  ⚠️ ipset nu este disponibil - GeoIP blocking nu va funcționa${NC}"
+fi
+
+# Enable iptables persistence
+if command -v netfilter-persistent &>/dev/null; then
+  systemctl enable netfilter-persistent 2>/dev/null || true
+  echo -e "${GREEN}  ✅ iptables persistence activat${NC}"
+fi
+
+# Set default policies (safe defaults)
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+
+# Ensure SSH is always allowed first
+iptables -C INPUT -p tcp --dport 22 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
+
+# Save current rules
+iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+echo -e "${GREEN}  ✅ iptables configurat și verificat${NC}"
+
+echo -e "${YELLOW}[2/8] Instalare Supabase Self-Hosted...${NC}"
 cd /opt
 if [ ! -d "supabase" ]; then
   git clone --depth 1 https://github.com/supabase/supabase
@@ -63,7 +97,7 @@ sed -i "s|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=https://${API_DOMAIN}|" .env
 docker compose up -d
 echo -e "${GREEN}✅ Supabase pornit!${NC}"
 
-echo -e "${YELLOW}[3/7] Clonare și build aplicație...${NC}"
+echo -e "${YELLOW}[3/8] Clonare și build aplicație...${NC}"
 cd /opt
 if [ ! -d "hoxta" ]; then
   git clone "$GIT_REPO" hoxta
@@ -80,7 +114,7 @@ npm install
 npm run build
 echo -e "${GREEN}✅ Build complet!${NC}"
 
-echo -e "${YELLOW}[4/7] Aplicare migrări DB...${NC}"
+echo -e "${YELLOW}[4/8] Aplicare migrări DB...${NC}"
 # Wait for DB to be ready
 sleep 5
 for f in supabase/migrations/*.sql; do
@@ -89,7 +123,7 @@ for f in supabase/migrations/*.sql; do
 done
 echo -e "${GREEN}✅ Migrări aplicate!${NC}"
 
-echo -e "${YELLOW}[5/7] Configurare Nginx...${NC}"
+echo -e "${YELLOW}[5/8] Configurare Nginx...${NC}"
 cat > /etc/nginx/sites-available/hoxta << NGINX
 server {
     listen 80;
@@ -127,10 +161,10 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 echo -e "${GREEN}✅ Nginx configurat!${NC}"
 
-echo -e "${YELLOW}[6/7] SSL cu Let's Encrypt...${NC}"
+echo -e "${YELLOW}[6/8] SSL cu Let's Encrypt...${NC}"
 certbot --nginx -d "${DOMAIN}" -d "${API_DOMAIN}" --email "${SSL_EMAIL}" --agree-tos --non-interactive || echo -e "${RED}⚠️ SSL eșuat - verifică DNS-ul${NC}"
 
-echo -e "${YELLOW}[7/7] Setup Edge Functions cu Deno...${NC}"
+echo -e "${YELLOW}[7/8] Setup Edge Functions cu Deno...${NC}"
 if ! command -v deno &>/dev/null; then
   curl -fsSL https://deno.land/install.sh | sh
   export PATH="$HOME/.deno/bin:$PATH"
@@ -177,6 +211,18 @@ EOF
 
 systemctl daemon-reload
 systemctl enable --now hoxta-agent-sync hoxta-firewall-sync 2>/dev/null || true
+
+echo -e "${YELLOW}[8/8] Verificare finală iptables...${NC}"
+# Final iptables verification
+echo -e "  Kernel modules:"
+lsmod | grep -E "^ip_tables|^iptable_filter|^xt_" | head -10 | while read line; do
+  echo -e "    ${GREEN}✓${NC} $line"
+done
+echo -e "  Reguli active: $(iptables -L INPUT -n 2>/dev/null | tail -n +3 | wc -l) (INPUT)"
+echo -e "  iptables-save: $(command -v iptables-save &>/dev/null && echo '✅ disponibil' || echo '❌ lipsă')"
+echo -e "  netfilter-persistent: $(command -v netfilter-persistent &>/dev/null && echo '✅ disponibil' || echo '⚠️ lipsă')"
+echo -e "  ipset: $(command -v ipset &>/dev/null && echo '✅ disponibil' || echo '⚠️ lipsă')"
+echo -e "${GREEN}✅ iptables verificat și funcțional!${NC}"
 
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"

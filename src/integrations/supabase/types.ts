@@ -173,6 +173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_bans: {
+        Row: {
+          banned_at: string
+          created_at: string
+          enabled: boolean
+          expires_at: string | null
+          id: string
+          ip_address: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          created_at?: string
+          enabled?: boolean
+          expires_at?: string | null
+          id?: string
+          ip_address: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          created_at?: string
+          enabled?: boolean
+          expires_at?: string | null
+          id?: string
+          ip_address?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       preset_template_rules: {
         Row: {
           action: string
