@@ -97,7 +97,7 @@ sed -i "s|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=https://${API_DOMAIN}|" .env
 docker compose up -d
 echo -e "${GREEN}✅ Supabase pornit!${NC}"
 
-echo -e "${YELLOW}[3/7] Clonare și build aplicație...${NC}"
+echo -e "${YELLOW}[3/8] Clonare și build aplicație...${NC}"
 cd /opt
 if [ ! -d "hoxta" ]; then
   git clone "$GIT_REPO" hoxta
