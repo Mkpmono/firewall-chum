@@ -164,7 +164,7 @@ echo -e "${GREEN}✅ Nginx configurat!${NC}"
 echo -e "${YELLOW}[6/8] SSL cu Let's Encrypt...${NC}"
 certbot --nginx -d "${DOMAIN}" -d "${API_DOMAIN}" --email "${SSL_EMAIL}" --agree-tos --non-interactive || echo -e "${RED}⚠️ SSL eșuat - verifică DNS-ul${NC}"
 
-echo -e "${YELLOW}[7/7] Setup Edge Functions cu Deno...${NC}"
+echo -e "${YELLOW}[7/8] Setup Edge Functions cu Deno...${NC}"
 if ! command -v deno &>/dev/null; then
   curl -fsSL https://deno.land/install.sh | sh
   export PATH="$HOME/.deno/bin:$PATH"
