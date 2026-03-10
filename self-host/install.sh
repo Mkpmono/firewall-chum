@@ -114,7 +114,7 @@ npm install
 npm run build
 echo -e "${GREEN}✅ Build complet!${NC}"
 
-echo -e "${YELLOW}[4/7] Aplicare migrări DB...${NC}"
+echo -e "${YELLOW}[4/8] Aplicare migrări DB...${NC}"
 # Wait for DB to be ready
 sleep 5
 for f in supabase/migrations/*.sql; do
