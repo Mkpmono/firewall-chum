@@ -32,11 +32,45 @@ read -sp "Parola dashboard Supabase: " DASH_PASS
 echo
 
 echo ""
-echo -e "${YELLOW}[1/7] Instalare dependințe...${NC}"
+echo -e "${YELLOW}[1/8] Instalare dependințe...${NC}"
 apt update -qq
-apt install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx git curl nodejs npm
+apt install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx git curl nodejs npm iptables iptables-persistent ipset
 
 systemctl enable docker && systemctl start docker
+
+echo -e "${YELLOW}[1.5/8] Verificare și configurare iptables...${NC}"
+# Verify iptables is working
+if command -v iptables &>/dev/null; then
+  echo -e "${GREEN}  ✅ iptables instalat: $(iptables --version)${NC}"
+else
+  echo -e "${RED}  ❌ iptables nu s-a instalat corect!${NC}"
+  exit 1
+fi
+
+# Verify ipset
+if command -v ipset &>/dev/null; then
+  echo -e "${GREEN}  ✅ ipset instalat: $(ipset --version | head -1)${NC}"
+else
+  echo -e "${YELLOW}  ⚠️ ipset nu este disponibil - GeoIP blocking nu va funcționa${NC}"
+fi
+
+# Enable iptables persistence
+if command -v netfilter-persistent &>/dev/null; then
+  systemctl enable netfilter-persistent 2>/dev/null || true
+  echo -e "${GREEN}  ✅ iptables persistence activat${NC}"
+fi
+
+# Set default policies (safe defaults)
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+
+# Ensure SSH is always allowed first
+iptables -C INPUT -p tcp --dport 22 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT
+
+# Save current rules
+iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+echo -e "${GREEN}  ✅ iptables configurat și verificat${NC}"
 
 echo -e "${YELLOW}[2/7] Instalare Supabase Self-Hosted...${NC}"
 cd /opt
