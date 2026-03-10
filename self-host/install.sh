@@ -72,7 +72,7 @@ iptables -C INPUT -p tcp --dport 22 -j ACCEPT 2>/dev/null || iptables -I INPUT 1
 iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
 echo -e "${GREEN}  ✅ iptables configurat și verificat${NC}"
 
-echo -e "${YELLOW}[2/7] Instalare Supabase Self-Hosted...${NC}"
+echo -e "${YELLOW}[2/8] Instalare Supabase Self-Hosted...${NC}"
 cd /opt
 if [ ! -d "supabase" ]; then
   git clone --depth 1 https://github.com/supabase/supabase
