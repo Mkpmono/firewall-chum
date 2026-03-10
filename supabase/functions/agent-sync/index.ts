@@ -134,6 +134,13 @@ Deno.serve(async (req) => {
       .eq("user_id", server.user_id)
       .eq("enabled", true);
 
+    // Get user's IP bans
+    const { data: ipBans } = await supabase
+      .from("ip_bans")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("enabled", true);
+
     const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
     const hasPremiumDdos = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
