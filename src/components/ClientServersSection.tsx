@@ -37,6 +37,7 @@ const PANEL_OPTIONS = [
   { id: "hestia", name: "HestiaCP" },
   { id: "cloudpanel", name: "CloudPanel" },
   { id: "pterodactyl", name: "Pterodactyl" },
+  { id: "gamecp", name: "GameCP" },
   { id: "dedicated", name: "Server Dedicat" },
   { id: "other", name: "Altul" },
 ];
