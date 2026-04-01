@@ -20,6 +20,7 @@ const PANEL_TYPES = [
   { id: "hestia", name: "HestiaCP", icon: "Globe" },
   { id: "cloudpanel", name: "CloudPanel", icon: "Globe" },
   { id: "pterodactyl", name: "Pterodactyl", icon: "Gamepad2" },
+  { id: "gamecp", name: "GameCP", icon: "Gamepad2" },
   { id: "dedicated", name: "Server Dedicat", icon: "HardDrive" },
   { id: "other", name: "Altul", icon: "Server" },
 ];
