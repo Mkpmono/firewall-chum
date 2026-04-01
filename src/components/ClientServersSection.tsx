@@ -253,11 +253,13 @@ export function ClientServersSection({ userId }: { userId: string }) {
               </div>
             </div>
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>✅ Compatibil cu <strong>toate panelurile VPS</strong>: Virtualizor, SolusVM, Proxmox, Virtuozzo, XenOrchestra, oVirt</p>
-              <p>✅ Compatibil cu <strong>paneluri web</strong>: cPanel/WHM, Plesk, DirectAdmin, CyberPanel, HestiaCP, CloudPanel</p>
-              <p>✅ Compatibil cu <strong>game panels</strong>: Pterodactyl, GameCP</p>
-              <p>✅ Funcționează pe <strong>servere dedicate</strong> bare-metal</p>
+              <p>✅ <strong>Auto-detect</strong> tipul serverului și configurare automată porturi</p>
+              <p>✅ <strong>VPS</strong>: Virtualizor KVM, SolusVM, Proxmox, Virtuozzo, XenOrchestra, oVirt</p>
+              <p>✅ <strong>Web Hosting</strong>: cPanel/WHM, Plesk, DirectAdmin, CyberPanel, HestiaCP, CloudPanel</p>
+              <p>✅ <strong>Game Panels</strong>: Pterodactyl, GameCP (CS, Minecraft, FiveM, ARK, Rust, TeamSpeak)</p>
+              <p>✅ <strong>Dedicated</strong>: Servere bare-metal din data center</p>
               <p className="mt-2">🔄 Agentul sincronizează regulile automat la fiecare <strong>5 minute</strong> via cron.</p>
+              <p>📦 Instalare automată: iptables, ipset, fail2ban, GeoIP</p>
               <p>📋 Loguri: <code className="text-primary">/var/log/hoxta-firewall.log</code></p>
             </div>
             <div>
