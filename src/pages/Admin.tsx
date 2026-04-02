@@ -44,9 +44,6 @@ const Admin = () => {
       <header className="border-b border-border/50 glass sticky top-0 z-40">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="h-9 w-9 rounded-xl">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
             <Shield className="h-5 w-5 text-primary" />
             <span className="font-bold text-foreground text-lg">
               Ho<span className="gradient-text">x</span>ta
@@ -54,6 +51,10 @@ const Admin = () => {
             <Badge className="gradient-btn text-primary-foreground border-0 text-xs">Admin</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-xl text-xs">
+              <Shield className="h-3.5 w-3.5 mr-1.5" />
+              Client
+            </Button>
             <Button variant={showWhmcs ? "default" : "outline"} size="sm" onClick={() => setShowWhmcs(!showWhmcs)} className="rounded-xl text-xs">
               <Server className="h-3.5 w-3.5 mr-1.5" />
               WHMCS
