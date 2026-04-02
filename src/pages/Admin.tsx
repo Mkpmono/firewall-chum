@@ -143,7 +143,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
   const [email, setEmail] = useState("");
   const [maxRulesVal, setMaxRulesVal] = useState(20);
   const { toast } = useToast();
-  const [sinkholeIp, setSinkholeIp] = useState("192.0.2.1");
+  
   const [resetOpen, setResetOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [resetting, setResetting] = useState(false);
