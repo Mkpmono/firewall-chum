@@ -476,10 +476,10 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
         ddos_protection: !isActive,
       });
       toast({
-        title: !isActive ? "🛡️ DDoS Premium activat!" : "DDoS Premium dezactivat",
+        title: !isActive ? "🛡️ Null-Route Auto activat!" : "Null-Route Auto dezactivat",
         description: !isActive 
-          ? "21 reguli avansate anti-DDoS activate. Clientul trece de la Standard la Premium." 
-          : "Clientul revine la protecția DDoS Standard (6 reguli de bază).",
+          ? "Când se detectează un atac DDoS, IP-ul atacat va fi null-routed automat prin iptables (DROP all traffic)." 
+          : "Protecția null-route automată a fost dezactivată.",
       });
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });

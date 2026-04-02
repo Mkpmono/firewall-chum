@@ -105,9 +105,11 @@ export function DdosMonitoring() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <ArrowDownRight className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Trafic Redirecționat</span>
+              <span className="text-xs text-muted-foreground">Null-Route Auto</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{totalRedirected.toLocaleString()}</p>
+            <p className={`text-2xl font-bold ${hasDdos ? "text-primary" : "text-muted-foreground"}`}>
+              {hasDdos ? "ON" : "OFF"}
+            </p>
           </CardContent>
         </Card>
 
