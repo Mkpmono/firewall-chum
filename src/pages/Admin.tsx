@@ -497,7 +497,7 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
       }`}
     >
       {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {isActive ? "DDoS PREMIUM" : "DDoS STANDARD"}
+      {isActive ? "NULL-ROUTE ON" : "NULL-ROUTE OFF"}
     </button>
   );
 }
