@@ -27,7 +27,7 @@ export function DdosMonitoring() {
   const [events, setEvents] = useState<DdosEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const hasDdos = (myProfile as any)?.ddos_protection === true;
-  const sinkholeIp = (myProfile as any)?.sinkhole_ip || "192.0.2.1";
+  
 
   useEffect(() => {
     if (!user) return;
