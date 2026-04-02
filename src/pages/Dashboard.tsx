@@ -133,7 +133,7 @@ const Dashboard = () => {
               {user?.email}
             </span>
             {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="rounded-xl text-xs">
+              <Button variant="default" size="sm" onClick={() => navigate("/admin")} className="rounded-xl text-xs gradient-btn border-0">
                 <Settings className="h-3.5 w-3.5 mr-1.5" />
                 Admin
               </Button>
