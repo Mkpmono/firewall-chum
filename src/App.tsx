@@ -26,8 +26,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { data: isAdmin, isLoading } = useIsAdmin();
-  if (loading || isLoading) return (
+  const { data: isAdmin, isLoading, isFetched } = useIsAdmin();
+  if (loading || isLoading || !isFetched) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-primary animate-pulse-glow font-semibold">Se încarcă...</div>
     </div>
