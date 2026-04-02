@@ -152,7 +152,7 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
     setDisplayName(profile?.display_name || "");
     setEmail(profile?.email || "");
     setMaxRulesVal(profile?.max_rules ?? 20);
-    setSinkholeIp(profile?.sinkhole_ip || "192.0.2.1");
+    
     setEditing(true);
   };
 
