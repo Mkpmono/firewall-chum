@@ -83,6 +83,7 @@ const Admin = () => {
                   <Users className="h-4 w-4 text-primary" />
                   <h2 className="font-semibold text-sm text-foreground">Clienți</h2>
                   <Badge variant="secondary" className="ml-auto text-xs">{profiles?.length || 0}</Badge>
+                  <CreateAccountButton />
                 </div>
                 {profilesLoading ? (
                   <div className="p-8 text-center text-muted-foreground animate-pulse-glow">Se încarcă...</div>
