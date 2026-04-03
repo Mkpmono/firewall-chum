@@ -175,8 +175,12 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
 
   const handleDelete = async () => {
     try {
-      await deleteProfile.mutateAsync(userId);
-      toast({ title: "Profil șters!" });
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { target_user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Cont șters!" });
       onDeleted();
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
