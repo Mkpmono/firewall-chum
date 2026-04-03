@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ddos_tier text NOT NULL DEFAULT 'standard';
