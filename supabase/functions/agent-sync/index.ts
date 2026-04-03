@@ -142,8 +142,14 @@ Deno.serve(async (req) => {
       .eq("user_id", server.user_id)
       .eq("enabled", true);
 
-    const sinkholeIp = profile?.sinkhole_ip || "192.0.2.1";
-    const hasPremiumDdos = profile?.ddos_protection === true;
+    // Get active DDoS events for null-route auto
+    const { data: activeDdos } = await supabase
+      .from("ddos_events")
+      .select("*")
+      .eq("user_id", server.user_id)
+      .eq("status", "active");
+
+    const hasDdosNullRoute = profile?.ddos_protection === true;
     const userIps = (ips || []).map(i => i.ip_address);
 
     // Generate complete iptables script
@@ -154,8 +160,8 @@ Deno.serve(async (req) => {
       `# ║  Server: ${server.hostname} (${server.panel_type})`,
       `# ║  Generated: ${new Date().toISOString()}`,
       `# ║  IPs: ${userIps.join(", ") || "none"}`,
-      `# ║  DDoS: ${hasPremiumDdos ? "PREMIUM" : "STANDARD"}`,
-      `# ║  GeoIP: ${(geoRules || []).length} rules`,
+      `# ║  DDoS Null-Route: ${hasDdosNullRoute ? "ACTIV" : "INACTIV"}`,
+      `# ║  Active attacks: ${(activeDdos || []).length}`,
       "# ╚══════════════════════════════════════════════════════════════╝",
       "",
       "set -e",
@@ -188,10 +194,36 @@ Deno.serve(async (req) => {
     }
 
 
+    // ── Null-Route Auto: DROP source IPs from active DDoS events ──
+    if (hasDdosNullRoute && activeDdos && activeDdos.length > 0) {
+      lines.push("# ══════════════════════════════════════════");
+      lines.push("# ── NULL-ROUTE AUTO (Active DDoS Events) ──");
+      lines.push("# ══════════════════════════════════════════");
+      const allSourceIps = new Set<string>();
+      for (const event of activeDdos) {
+        if (event.source_ips && Array.isArray(event.source_ips)) {
+          for (const srcIp of event.source_ips) {
+            if (srcIp && srcIp.trim()) allSourceIps.add(srcIp.trim());
+          }
+        }
+      }
+      if (allSourceIps.size > 0) {
+        lines.push(`# ${allSourceIps.size} attacker IP(s) detected from ${activeDdos.length} active event(s)`);
+        for (const srcIp of allSourceIps) {
+          lines.push(`iptables -A INPUT -s ${srcIp} -j DROP  # DDoS null-route auto`);
+          lines.push(`iptables -A FORWARD -s ${srcIp} -j DROP  # DDoS null-route auto`);
+        }
+        lines.push(`echo "[Hoxta] NULL-ROUTE: ${allSourceIps.size} attacker IP(s) blocked via iptables DROP."`);
+      } else {
+        lines.push("# Active DDoS events detected but no source IPs to block");
+      }
+      lines.push("");
+    }
+
     // DDoS protection per IP
     for (const ip of userIps) {
-      if (hasPremiumDdos) {
-        lines.push(`# ── Premium DDoS for ${ip} ──`);
+      if (hasDdosNullRoute) {
+        lines.push(`# ── DDoS Protection for ${ip} ──`);
         lines.push("sysctl -w net.ipv4.tcp_syncookies=1 >/dev/null 2>&1");
         lines.push("sysctl -w net.ipv4.tcp_max_syn_backlog=8192 >/dev/null 2>&1");
         lines.push("sysctl -w net.netfilter.nf_conntrack_max=500000 >/dev/null 2>&1");
@@ -207,9 +239,6 @@ Deno.serve(async (req) => {
         lines.push(`iptables -A INPUT -d ${ip} -p icmp --icmp-type echo-request -m hashlimit --hashlimit-above 5/s --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name icmp_${safe} -j DROP`);
         lines.push(`iptables -A INPUT -d ${ip} -p tcp --dport 80 -m connlimit --connlimit-above 80 --connlimit-mask 32 -j DROP`);
         lines.push(`iptables -A INPUT -d ${ip} -p tcp --dport 443 -m connlimit --connlimit-above 80 --connlimit-mask 32 -j DROP`);
-        lines.push(`iptables -t nat -A PREROUTING -d ${ip} -p tcp --syn -m hashlimit --hashlimit-above 50/s --hashlimit-burst 80 --hashlimit-mode srcip --hashlimit-name sink_syn_${safe} -j DNAT --to-destination ${sinkholeIp}`);
-        lines.push(`iptables -t nat -A PREROUTING -d ${ip} -p udp -m hashlimit --hashlimit-above 50/s --hashlimit-burst 80 --hashlimit-mode srcip --hashlimit-name sink_udp_${safe} -j DNAT --to-destination ${sinkholeIp}`);
-        lines.push(`ip route add blackhole ${sinkholeIp}/32 2>/dev/null || true`);
         lines.push(`iptables -A INPUT -d ${ip} -p udp --sport 53 -m length --length 512:65535 -j DROP`);
         lines.push(`iptables -A INPUT -d ${ip} -p udp --sport 123 -m length --length 48:65535 -j DROP`);
         lines.push(`iptables -A INPUT -d ${ip} -p udp --dport 1900 -j DROP`);

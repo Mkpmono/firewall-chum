@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useAllProfiles, useClientIps, useAdminClientIps, useAllRulesForUser, useAdminProfiles, useAdminRules } from "@/hooks/useAdmin";
 import { RulesTable } from "@/components/RulesTable";
@@ -8,7 +9,7 @@ import { ClientServersSection } from "@/components/ClientServersSection";
 import { WhmcsModule } from "@/components/WhmcsModule";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff, HardDrive, Server, KeyRound } from "lucide-react";
+import { Shield, LogOut, Users, Plus, Trash2, Globe, ChevronRight, ArrowLeft, Pencil, Save, X, ShieldCheck, ShieldOff, HardDrive, Server, KeyRound, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,7 @@ const Admin = () => {
                   <Users className="h-4 w-4 text-primary" />
                   <h2 className="font-semibold text-sm text-foreground">Clienți</h2>
                   <Badge variant="secondary" className="ml-auto text-xs">{profiles?.length || 0}</Badge>
+                  <CreateAccountButton />
                 </div>
                 {profilesLoading ? (
                   <div className="p-8 text-center text-muted-foreground animate-pulse-glow">Se încarcă...</div>
@@ -173,8 +175,12 @@ function ClientProfileSection({ userId, profile, onDeleted }: { userId: string; 
 
   const handleDelete = async () => {
     try {
-      await deleteProfile.mutateAsync(userId);
-      toast({ title: "Profil șters!" });
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { target_user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Cont șters!" });
       onDeleted();
     } catch (error: any) {
       toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -461,6 +467,81 @@ function ClientRulesSection({ userId }: { userId: string }) {
         userId={userId}
       />
     </div>
+  );
+}
+
+function CreateAccountButton() {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleCreate = async () => {
+    if (!email.trim() || !password.trim()) {
+      toast({ title: "Eroare", description: "Email și parola sunt obligatorii.", variant: "destructive" });
+      return;
+    }
+    if (password.length < 6) {
+      toast({ title: "Eroare", description: "Parola trebuie să aibă cel puțin 6 caractere.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: { email: email.trim(), password, display_name: displayName.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "✅ Cont creat!", description: `Contul ${email} a fost creat cu succes.` });
+      setEmail("");
+      setPassword("");
+      setDisplayName("");
+      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["admin_profiles"] });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" className="rounded-xl gradient-btn text-primary-foreground border-0">
+          <UserPlus className="h-3.5 w-3.5 mr-1" /> Adaugă
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="glass border-border/50 rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Adaugă cont nou</AlertDialogTitle>
+          <AlertDialogDescription>Creează un cont nou de client.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Nume (opțional)</label>
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ion Popescu" className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Email *</label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@exemplu.com" className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Parolă * (min. 6 caractere)</label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" className="mt-1 bg-muted/50 border-border/50 text-sm rounded-xl" />
+          </div>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl" onClick={() => { setEmail(""); setPassword(""); setDisplayName(""); }}>Anulare</AlertDialogCancel>
+          <Button onClick={handleCreate} disabled={loading || !email.trim() || password.length < 6} className="rounded-xl gradient-btn text-primary-foreground border-0">
+            {loading ? "Se creează..." : "Creează cont"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
