@@ -74,8 +74,8 @@ export function DdosMonitoring() {
       <div className="flex items-center gap-2 mb-2">
         <Activity className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold text-foreground">DDoS Monitoring</h2>
-        <Badge className={hasDdos ? "gradient-btn text-primary-foreground border-0" : "bg-muted text-muted-foreground border-border/50"}>
-          {hasDdos ? "PREMIUM" : "STANDARD"}
+        <Badge className={isPremium ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : hasDdos ? "gradient-btn text-primary-foreground border-0" : "bg-muted text-muted-foreground border-border/50"}>
+          {isPremium ? "⭐ PREMIUM" : hasDdos ? "STANDARD" : "INACTIV"}
         </Badge>
       </div>
 
