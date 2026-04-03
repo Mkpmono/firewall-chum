@@ -549,6 +549,7 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
   const { updateProfile } = useAdminProfiles();
   const { toast } = useToast();
   const isActive = profile?.ddos_protection === true;
+  const tier = (profile as any)?.ddos_tier || "standard";
 
   const handleToggle = async () => {
     try {
@@ -567,19 +568,50 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
     }
   };
 
+  const handleTierChange = async () => {
+    const newTier = tier === "premium" ? "standard" : "premium";
+    try {
+      await updateProfile.mutateAsync({
+        user_id: userId,
+        ddos_tier: newTier,
+      } as any);
+      toast({
+        title: newTier === "premium" ? "⭐ Tier Premium activat!" : "Tier Standard setat",
+        description: newTier === "premium" 
+          ? "Clientul are acum protecție DDoS Premium cu reguli avansate și rate-limiting." 
+          : "Clientul a fost trecut pe protecție DDoS Standard.",
+      });
+    } catch (error: any) {
+      toast({ title: "Eroare", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
-    <button
-      onClick={handleToggle}
-      disabled={updateProfile.isPending}
-      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
-        isActive
-          ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
-          : "bg-muted/50 text-muted-foreground border border-border/50 hover:bg-muted"
-      }`}
-    >
-      {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
-      {isActive ? "NULL-ROUTE ON" : "NULL-ROUTE OFF"}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleToggle}
+        disabled={updateProfile.isPending}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+          isActive
+            ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25"
+            : "bg-muted/50 text-muted-foreground border border-border/50 hover:bg-muted"
+        }`}
+      >
+        {isActive ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+        {isActive ? "NULL-ROUTE ON" : "NULL-ROUTE OFF"}
+      </button>
+      <button
+        onClick={handleTierChange}
+        disabled={updateProfile.isPending}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+          tier === "premium"
+            ? "bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25"
+            : "bg-muted/50 text-muted-foreground border border-border/50 hover:bg-muted"
+        }`}
+      >
+        {tier === "premium" ? "⭐ PREMIUM" : "STANDARD"}
+      </button>
+    </div>
   );
 }
 
