@@ -27,6 +27,8 @@ export function DdosMonitoring() {
   const [events, setEvents] = useState<DdosEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const hasDdos = (myProfile as any)?.ddos_protection === true;
+  const ddosTier = (myProfile as any)?.ddos_tier || "standard";
+  const isPremium = ddosTier === "premium";
   
 
   useEffect(() => {
