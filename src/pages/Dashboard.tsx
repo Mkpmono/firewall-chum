@@ -188,7 +188,21 @@ const Dashboard = () => {
                   <ShieldCheck className="h-6 w-6 text-primary" />
                   <span className="text-lg font-bold text-primary">ACTIV</span>
                 </div>
-                <p className="text-xs text-primary/70 mt-0.5">IP-urile atacate sunt null-routed automat</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                    isPremium 
+                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" 
+                      : "bg-muted/50 text-muted-foreground border border-border/50"
+                  }`}>
+                    {isPremium ? "⭐ PREMIUM" : "STANDARD"}
+                  </span>
+                </div>
+                {isPremium && (
+                  <p className="text-xs text-amber-400/70 mt-1">Rate-limiting avansat + reguli prioritare</p>
+                )}
+                {!isPremium && (
+                  <p className="text-xs text-primary/70 mt-1">IP-urile atacate sunt null-routed automat</p>
+                )}
               </div>
             ) : (
               <div>
