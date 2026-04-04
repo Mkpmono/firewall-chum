@@ -12,33 +12,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify the caller is an admin
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { authorization: authHeader } },
-    });
+    // Get JWT from authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      console.error("No authorization header");
+      return new Response(JSON.stringify({ error: "No authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    // Use service role client to verify the caller's token
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: userError } = await adminClient.auth.getUser(token);
+    
+    if (userError || !caller) {
+      console.error("Auth error:", userError?.message || "No user found");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check admin role
-    const { data: roleData } = await callerClient
+    // Check admin role using service role client (bypasses RLS)
+    const { data: roleData } = await adminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", caller.id)
@@ -68,8 +70,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use service role to update the user's password
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { error } = await adminClient.auth.admin.updateUser(target_user_id, {
       password: new_password,
     });
@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("Unexpected error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
