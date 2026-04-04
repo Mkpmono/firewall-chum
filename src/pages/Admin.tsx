@@ -574,7 +574,7 @@ function DdosToggle({ userId, profile }: { userId: string; profile: any }) {
       await updateProfile.mutateAsync({
         user_id: userId,
         ddos_tier: newTier,
-      } as any);
+      });
       toast({
         title: newTier === "premium" ? "⭐ Tier Premium activat!" : "Tier Standard setat",
         description: newTier === "premium" 
