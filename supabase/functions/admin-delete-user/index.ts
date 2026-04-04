@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,96 +6,108 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+      return json({ error: "Server configuration error" }, 500);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-    const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { authorization: authHeader } },
+    if (!token) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    const callerId = claimsData?.claims?.sub;
+
+    if (claimsError || !callerId) {
+      return json({ error: "Unauthorized" }, 401);
     }
 
-    const { data: roleData } = await callerClient
+    const { data: roleData, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id)
+      .eq("user_id", callerId)
       .eq("role", "admin")
       .maybeSingle();
 
+    if (roleError) {
+      return json({ error: roleError.message }, 500);
+    }
+
     if (!roleData) {
-      return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Forbidden: admin only" }, 403);
     }
 
-    const { target_user_id } = await req.json();
-
-    if (!target_user_id) {
-      return new Response(
-        JSON.stringify({ error: "target_user_id required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
     }
 
-    if (target_user_id === caller.id) {
-      return new Response(
-        JSON.stringify({ error: "Cannot delete your own account" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const targetUserId = typeof (body as Record<string, unknown>)?.target_user_id === "string"
+      ? ((body as Record<string, unknown>).target_user_id as string).trim()
+      : "";
+
+    if (!targetUserId) {
+      return json({ error: "target_user_id required" }, 400);
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    
-    // Delete profile and related data first (cascading)
-    await adminClient.from("firewall_rules").delete().eq("user_id", target_user_id);
-    await adminClient.from("client_ips").delete().eq("user_id", target_user_id);
-    await adminClient.from("ip_bans").delete().eq("user_id", target_user_id);
-    await adminClient.from("geoip_rules").delete().eq("user_id", target_user_id);
-    await adminClient.from("useragent_rules").delete().eq("user_id", target_user_id);
-    await adminClient.from("ddos_events").delete().eq("user_id", target_user_id);
-    await adminClient.from("servers").delete().eq("user_id", target_user_id);
-    await adminClient.from("user_roles").delete().eq("user_id", target_user_id);
-    await adminClient.from("profiles").delete().eq("user_id", target_user_id);
+    if (targetUserId === callerId) {
+      return json({ error: "Cannot delete your own account" }, 400);
+    }
 
-    // Delete auth user
-    const { error } = await adminClient.auth.admin.deleteUser(target_user_id);
+    const deletions = await Promise.all([
+      adminClient.from("firewall_rules").delete().eq("user_id", targetUserId),
+      adminClient.from("client_ips").delete().eq("user_id", targetUserId),
+      adminClient.from("ip_bans").delete().eq("user_id", targetUserId),
+      adminClient.from("geoip_rules").delete().eq("user_id", targetUserId),
+      adminClient.from("useragent_rules").delete().eq("user_id", targetUserId),
+      adminClient.from("ddos_events").delete().eq("user_id", targetUserId),
+      adminClient.from("servers").delete().eq("user_id", targetUserId),
+      adminClient.from("user_roles").delete().eq("user_id", targetUserId),
+      adminClient.from("profiles").delete().eq("user_id", targetUserId),
+    ]);
+
+    const deleteError = deletions.find((result) => result.error)?.error;
+    if (deleteError) {
+      return json({ error: deleteError.message }, 500);
+    }
+
+    const { error } = await adminClient.auth.admin.deleteUser(targetUserId);
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: error.message }, 400);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("admin-delete-user error:", message);
+    return json({ error: message }, 500);
   }
 });
