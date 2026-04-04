@@ -25,8 +25,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use service role client to verify the caller's token
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    // Use service role client with admin auth options
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
     
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller }, error: userError } = await adminClient.auth.getUser(token);
