@@ -8,9 +8,9 @@
 set -e
 
 # ── CONFIGURARE ──
-HOXTA_API_URL="${HOXTA_API_URL:-https://api.hoxta.com/functions/v1}"
+HOXTA_API_URL="${HOXTA_API_URL:-https://api-fw.hoxta.com/functions/v1}"
 HOXTA_API_KEY="${HOXTA_API_KEY:-YOUR_SERVICE_ROLE_KEY}"
-AGENT_INSTALL_URL="${AGENT_INSTALL_URL:-https://raw.githubusercontent.com/YOUR_REPO/main/self-host/hoxta-agent-install.sh}"
+HOXTA_PANEL_URL="${HOXTA_PANEL_URL:-https://firewall.hoxta.com}"
 LOG_FILE="/var/log/hoxta-virtualizor-hook.log"
 
 log() {
