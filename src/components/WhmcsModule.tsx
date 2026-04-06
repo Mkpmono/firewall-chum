@@ -15,7 +15,7 @@ interface WhmcsModuleProps {
 
 export const WhmcsModule = ({ whmcsApiSecret, onSecretChange }: WhmcsModuleProps) => {
   const { toast } = useToast();
-  const [hoxtaUrl, setHoxtaUrl] = useState("");
+  const [hoxtaUrl, setHoxtaUrl] = useState("https://api-fw.hoxta.com");
   const [showPhpPreview, setShowPhpPreview] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
@@ -39,7 +39,7 @@ export const WhmcsModule = ({ whmcsApiSecret, onSecretChange }: WhmcsModuleProps
   const generatePhpModule = () => {
     const apiUrl = hoxtaUrl
       ? `${hoxtaUrl.replace(/\/$/, "")}/functions/v1/whmcs-provision`
-      : "https://YOUR_SUPABASE_URL/functions/v1/whmcs-provision";
+      : "https://api-fw.hoxta.com/functions/v1/whmcs-provision";
     const secret = whmcsApiSecret || "YOUR_WHMCS_API_SECRET";
 
     return `<?php
